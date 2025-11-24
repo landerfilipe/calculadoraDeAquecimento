@@ -6,18 +6,20 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
     />
+    
     <title>FLX Calc - Protocolo de Elite</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563EB">
+    <meta name="description" content="Calculadora de Carga e Aquecimento para Powerlifting e Musculação">
+    <link rel="apple-touch-icon" href="icon-192.png">
 
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Fonte Outfit -->
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap"
       rel="stylesheet"
     />
 
-    <!-- React e ReactDOM -->
     <script
       crossorigin
       src="https://unpkg.com/react@18/umd/react.production.min.js"
@@ -27,7 +29,6 @@
       src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
     ></script>
 
-    <!-- Babel para traduzir o código React no navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
     <style>
@@ -379,13 +380,13 @@
                 <button
                   onClick={() => setDayType('pesado')}
                   className={`
-                                    flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all
-                                    ${
-                                      dayType === 'pesado'
-                                        ? 'bg-black text-white shadow-md'
-                                        : 'text-gray-400 hover:text-gray-600'
-                                    }
-                                `}
+                                            flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all
+                                            ${
+                                              dayType === 'pesado'
+                                                ? 'bg-black text-white shadow-md'
+                                                : 'text-gray-400 hover:text-gray-600'
+                                            }
+                                        `}
                 >
                   <Scale size={18} />
                   Dia Pesado
@@ -393,13 +394,13 @@
                 <button
                   onClick={() => setDayType('leve')}
                   className={`
-                                    flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all
-                                    ${
-                                      dayType === 'leve'
-                                        ? `${themeColor.bg} text-white shadow-md`
-                                        : 'text-gray-400 hover:text-gray-600'
-                                    }
-                                `}
+                                            flex items-center justify-center gap-2 py-3 rounded-lg font-bold text-sm uppercase tracking-wide transition-all
+                                            ${
+                                              dayType === 'leve'
+                                                ? `${themeColor.bg} text-white shadow-md`
+                                                : 'text-gray-400 hover:text-gray-600'
+                                            }
+                                        `}
                 >
                   <Zap size={18} />
                   Dia Leve
@@ -487,30 +488,30 @@
                       key={index}
                       onClick={() => toggleSet(index)}
                       className={`
-                                            relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none
-                                            ${
-                                              isDone
-                                                ? 'opacity-30 grayscale blur-[0.5px]'
-                                                : 'opacity-100'
-                                            }
-                                            ${
-                                              isNext
-                                                ? `bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ${themeColor.ring}`
-                                                : 'bg-white border border-gray-100 hover:border-gray-300'
-                                            }
-                                        `}
+                                                    relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none
+                                                    ${
+                                                      isDone
+                                                        ? 'opacity-30 grayscale blur-[0.5px]'
+                                                        : 'opacity-100'
+                                                    }
+                                                    ${
+                                                      isNext
+                                                        ? `bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ${themeColor.ring}`
+                                                        : 'bg-white border border-gray-100 hover:border-gray-300'
+                                                    }
+                                                `}
                     >
                       <div
                         className={`
-                                            flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all
-                                            ${
-                                              isDone
-                                                ? 'bg-black border-black'
-                                                : isNext
-                                                ? 'bg-white border-transparent text-black'
-                                                : 'bg-gray-100 border-transparent text-gray-300 group-hover:border-gray-400'
-                                            }
-                                        `}
+                                                        flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all
+                                                        ${
+                                                          isDone
+                                                            ? 'bg-black border-black'
+                                                            : isNext
+                                                            ? 'bg-white border-transparent text-black'
+                                                            : 'bg-gray-100 border-transparent text-gray-300 group-hover:border-gray-400'
+                                                        }
+                                                    `}
                       >
                         {isDone ? (
                           <Check size={24} className='text-white' />
@@ -667,6 +668,16 @@
 
       const root = ReactDOM.createRoot(document.getElementById('root'));
       root.render(<FLXCalc />);
+    </script>
+    
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado com sucesso:', reg.scope))
+                    .catch(err => console.error('Erro ao registrar SW:', err));
+            });
+        }
     </script>
   </body>
 </html>
