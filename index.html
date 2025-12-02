@@ -235,37 +235,41 @@
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
 
+          // Calcular Min e Max para "agarrar" o gráfico nas bordas verticais
           const minWeight = Math.min(...data);
           const maxWeight = Math.max(...data);
 
-          // Plugin Customizado para linha vertical de bolinhas (Ultra-Seguro)
+          // Plugin Customizado para linha vertical de bolinhas
           const customDrawPlugin = {
             id: 'customDrawPlugin',
             afterDatasetsDraw: (chart) => {
-              if (!chart || !chart.ctx || !chart.chartArea || !chart.scales) return;
+              const { ctx, chartArea, scales: { x, y } } = chart;
               
-              const { ctx, chartArea } = chart;
-              const { top, bottom } = chartArea;
+              // Verificação de segurança para evitar erro de renderização
+              if (!chartArea) return;
+              const { top, bottom, left, right } = chartArea;
 
               chart.data.datasets.forEach((dataset, i) => {
                  const meta = chart.getDatasetMeta(i);
-                 if (meta && !meta.hidden && meta.data) {
-                   meta.data.forEach((point) => {
+                 if (!meta.hidden) {
+                   meta.data.forEach((point, index) => {
+                     // Segurança: Ignorar pontos sem coordenadas válidas
                      if (
-                        !point ||
-                        typeof point.x !== 'number' || !isFinite(point.x) ||
-                        typeof point.y !== 'number' || !isFinite(point.y)
+                        typeof point.x !== 'number' || isNaN(point.x) ||
+                        typeof point.y !== 'number' || isNaN(point.y) ||
+                        point.y > bottom || point.y < top ||
+                        point.x < left || point.x > right
                      ) {
                        return;
                      }
 
+                     // 1. Linha Vertical de Bolinhas
                      ctx.save();
                      ctx.beginPath();
-                     ctx.strokeStyle = '#CBD5E1'; 
+                     ctx.strokeStyle = '#CBD5E1'; // Cinza (Slate-300)
                      ctx.lineWidth = 2;
-                     ctx.setLineDash([0, 5]); 
-                     ctx.lineCap = 'round';   
-                     
+                     ctx.setLineDash([0, 5]); // Efeito de bolinha (traço zero, espaço 5)
+                     ctx.lineCap = 'round';   // Ponta redonda
                      ctx.moveTo(point.x, bottom);
                      ctx.lineTo(point.x, point.y);
                      ctx.stroke();
@@ -289,33 +293,35 @@
                   backgroundColor: (context) => {
                     const ctx = context.chart.ctx;
                     const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); 
-                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  
+                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); // Topo 30%
+                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  // Base Transparente
                     return gradient;
                   },
                   pointBackgroundColor: '#ffffff',
                   pointBorderColor: '#2563EB',
                   pointBorderWidth: 2,
+                  
                   pointStyle: 'circle',
+
                   pointRadius: (ctx) => {
                     const index = ctx.dataIndex;
                     const count = ctx.dataset.data.length;
+                    
                     if (index === 0 || index === count - 1) return 2;
                     return 1;
                   },
+                  
                   pointHoverRadius: 6,
                   tension: 0.1,
                   fill: true,
-                  clip: false, 
+                  clip: false, // Impede que bolinhas nas bordas sejam cortadas
                 },
               ],
             },
             options: {
-              // AUMENTO DE RESOLUÇÃO (HD): Força o pixel ratio para o máximo da tela ou 2 (o que for maior)
-              devicePixelRatio: Math.max(window.devicePixelRatio || 1, 2),
               responsive: true,
               maintainAspectRatio: false,
-              animation: true,
+              animation: true, 
               layout: {
                 padding: {
                   top: 40, 
@@ -325,7 +331,9 @@
                 }
               },
               plugins: {
-                legend: { display: false },
+                legend: {
+                  display: false,
+                },
                 tooltip: {
                   backgroundColor: '#1F2937',
                   padding: 10,
@@ -416,14 +424,16 @@
         const calculatePercentage = (percent) => {
           if (!oneRepMax) return 0;
           const rawWeight = parseFloat(oneRepMax) * (percent / 100);
+          
+          // Lógica de arredondamento: Par mais próximo (ROUND)
           return Math.round(rawWeight / 2) * 2;
         };
 
         const repRanges = [
-          { reps: 5, percent: 75 },
-          { reps: 8, percent: 65 },
-          { reps: 12, percent: 55 },
-          { reps: 15, percent: 50 },
+          { reps: 5, percent: 80 },
+          { reps: 8, percent: 75 },
+          { reps: 12, percent: 70 },
+          { reps: 15, percent: 65 },
         ];
 
         return (
