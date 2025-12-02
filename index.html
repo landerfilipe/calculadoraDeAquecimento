@@ -2,26 +2,27 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <!-- Adicionado cache-control para forçar validação no servidor -->
+    <!-- Força o navegador a não usar cache antigo para o HTML -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    
-    <meta name="application-name" content="SHEIKO v3.0" />
+
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     
     <title>SHEIKO - Protocolo de Elite</title>
-    <link rel="manifest" href="manifest.json">
+    
+    <!-- QUERY STRING (?v=3.2) ADICIONADA PARA FORÇAR ATUALIZAÇÃO DO NOME -->
+    <link rel="manifest" href="manifest.json?v=3.2">
+    
     <meta name="theme-color" content="#ffffff">
     <meta name="description" content="Calculadora de Carga e Aquecimento para Powerlifting e Musculação">
     <link rel="apple-touch-icon" href="icon-192.png">
 
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <!-- Versões estáveis e compatíveis -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
 
@@ -49,7 +50,15 @@
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
         background-color: #ffffff;
+        /* Correção de renderização */
         -webkit-font-smoothing: antialiased;
+      }
+      /* Container de isolamento para evitar glitches gráficos no Android */
+      #root {
+        contain: content;
+        min-height: 100vh;
+        width: 100%;
+        background-color: #ffffff;
       }
       input::-webkit-outer-spin-button,
       input::-webkit-inner-spin-button {
@@ -60,10 +69,10 @@
         -moz-appearance: textfield;
       }
       .fade-in {
-        animation: fadeIn 0.3s ease-out;
+        animation: fadeIn 0.4s ease-out;
       }
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(5px); }
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
       }
     </style>
@@ -72,149 +81,44 @@
     <div id="root"></div>
 
     <script type="text/babel">
-      // Registrar plugin globalmente com verificação de segurança
       if (typeof Chart !== 'undefined' && typeof ChartDataLabels !== 'undefined') {
         Chart.register(ChartDataLabels);
       }
 
       // --- ÍCONES ---
       const Dumbbell = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <path d='m6.5 6.5 11 11' />
-          <path d='m21 21-1-1' />
-          <path d='m3 3 1 1' />
-          <path d='m18 22 4-4' />
-          <path d='m2 6 4-4' />
-          <path d='m3 10 7-7' />
-          <path d='m14 21 7-7' />
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <path d='m6.5 6.5 11 11' /><path d='m21 21-1-1' /><path d='m3 3 1 1' /><path d='m18 22 4-4' /><path d='m2 6 4-4' /><path d='m3 10 7-7' /><path d='m14 21 7-7' />
         </svg>
       );
-
       const Calculator = ({ className, size = 24 }) => (
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          width={size} 
-          height={size} 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className={className}
-        >
-          <rect width="16" height="20" x="4" y="2" rx="2"/>
-          <line x1="8" x2="16" y1="6" y2="6"/>
-          <line x1="16" x2="16" y1="14" y2="18"/>
-          <path d="M16 10h.01"/>
-          <path d="M12 10h.01"/>
-          <path d="M8 10h.01"/>
-          <path d="M12 14h.01"/>
-          <path d="M8 14h.01"/>
-          <path d="M12 18h.01"/>
-          <path d="M8 18h.01"/>
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+          <rect width="16" height="20" x="4" y="2" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>
         </svg>
       );
-      
       const Fire = ({ className, size = 24 }) => (
-        <svg 
-          xmlns="http://www.w3.org/2000/svg" 
-          width={size} 
-          height={size} 
-          viewBox="0 0 24 24" 
-          fill="none" 
-          stroke="currentColor" 
-          strokeWidth="2" 
-          strokeLinecap="round" 
-          strokeLinejoin="round" 
-          className={className}
-        >
+        <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
           <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.1.2-2.2.6-3.3.7 2.5 2.2 4.8 2.9 6.8z"/>
         </svg>
       );
-      
       const Check = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
           <polyline points='20 6 9 17 4 12' />
         </svg>
       );
-      
       const Hash = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <line x1='4' x2='20' y1='9' y2='9' />
-          <line x1='4' x2='20' y1='15' y2='15' />
-          <line x1='10' x2='8' y1='3' y2='21' />
-          <line x1='16' x2='14' y1='3' y2='21' />
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <line x1='4' x2='20' y1='9' y2='9' /><line x1='4' x2='20' y1='15' y2='15' /><line x1='10' x2='8' y1='3' y2='21' /><line x1='16' x2='14' y1='3' y2='21' />
         </svg>
       );
-      
       const ArrowRight = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <path d='M5 12h14' />
-          <path d='m12 5 7 7-7 7' />
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <path d='M5 12h14' /><path d='m12 5 7 7-7 7' />
         </svg>
       );
-      
       const AlertCircle = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <circle cx='12' cy='12' r='10' />
-          <line x1='12' x2='12' y1='8' y2='12' />
-          <line x1='12' x2='12.01' y1='16' y2='16' />
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <circle cx='12' cy='12' r='10' /><line x1='12' x2='12' y1='8' y2='12' /><line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
 
@@ -225,12 +129,8 @@
 
         React.useEffect(() => {
           if (!chartRef.current || sets.length === 0) return;
-
           const ctx = chartRef.current.getContext('2d');
-
-          if (chartInstance.current) {
-            chartInstance.current.destroy();
-          }
+          if (chartInstance.current) chartInstance.current.destroy();
 
           const chartDataSets = [
             ...sets,
@@ -240,37 +140,27 @@
           const labels = chartDataSets.map((_, i) => i === chartDataSets.length - 1 ? 'Work' : `Série ${i + 1}`);
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
-
           const minWeight = Math.min(...data);
           const maxWeight = Math.max(...data);
 
           const customDrawPlugin = {
             id: 'customDrawPlugin',
             afterDatasetsDraw: (chart) => {
-              if (!chart || !chart.ctx || !chart.chartArea || !chart.scales) return;
-              
-              const { ctx, chartArea } = chart;
-              const { top, bottom, left, right } = chartArea;
+              if (!chart || !chart.ctx || !chart.chartArea) return;
+              const { ctx, chartArea: { top, bottom, left, right } } = chart;
 
               chart.data.datasets.forEach((dataset, i) => {
                  const meta = chart.getDatasetMeta(i);
                  if (meta && !meta.hidden && meta.data) {
                    meta.data.forEach((point, index) => {
-                     if (
-                        !point ||
-                        typeof point.x !== 'number' || !isFinite(point.x) ||
-                        typeof point.y !== 'number' || !isFinite(point.y)
-                     ) {
-                       return;
-                     }
-
+                     if (!point || typeof point.x !== 'number' || !isFinite(point.x) || typeof point.y !== 'number' || !isFinite(point.y)) return;
+                     
                      ctx.save();
                      ctx.beginPath();
                      ctx.strokeStyle = '#CBD5E1'; 
                      ctx.lineWidth = 2;
                      ctx.setLineDash([0, 5]); 
                      ctx.lineCap = 'round';   
-                     
                      ctx.moveTo(point.x, bottom);
                      ctx.lineTo(point.x, point.y);
                      ctx.stroke();
@@ -285,51 +175,38 @@
             type: 'line',
             data: {
               labels: labels,
-              datasets: [
-                {
-                  label: 'Peso',
-                  data: data,
-                  borderColor: '#2563EB',
-                  borderWidth: 1,
-                  backgroundColor: (context) => {
-                    const ctx = context.chart.ctx;
-                    const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); 
-                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  
-                    return gradient;
-                  },
-                  pointBackgroundColor: '#ffffff',
-                  pointBorderColor: '#2563EB',
-                  pointBorderWidth: 2,
-                  
-                  pointStyle: 'circle',
-
-                  pointRadius: (ctx) => {
-                    const index = ctx.dataIndex;
-                    const count = ctx.dataset.data.length;
-                    if (index === 0 || index === count - 1) return 2;
-                    return 1;
-                  },
-                  
-                  pointHoverRadius: 6,
-                  tension: 0.1,
-                  fill: true,
-                  clip: false, 
+              datasets: [{
+                label: 'Peso',
+                data: data,
+                borderColor: '#2563EB',
+                borderWidth: 1,
+                backgroundColor: (context) => {
+                  const ctx = context.chart.ctx;
+                  const gradient = ctx.createLinearGradient(0, 0, 0, 250);
+                  gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); 
+                  gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  
+                  return gradient;
                 },
-              ],
+                pointBackgroundColor: '#ffffff',
+                pointBorderColor: '#2563EB',
+                pointBorderWidth: 2,
+                pointStyle: 'circle',
+                pointRadius: (ctx) => {
+                  const index = ctx.dataIndex;
+                  const count = ctx.dataset.data.length;
+                  return (index === 0 || index === count - 1) ? 2 : 1;
+                },
+                pointHoverRadius: 6,
+                tension: 0.1,
+                fill: true,
+                clip: false, 
+              }],
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
               animation: true,
-              layout: {
-                padding: {
-                  top: 40, 
-                  right: 30, 
-                  left: 30,  
-                  bottom: 15
-                }
-              },
+              layout: { padding: { top: 40, right: 30, left: 30, bottom: 15 } },
               plugins: {
                 legend: { display: false },
                 tooltip: {
@@ -337,69 +214,32 @@
                   padding: 10,
                   titleFont: { family: 'Outfit', size: 12 },
                   bodyFont: { family: 'Outfit', size: 12, weight: 'bold' },
-                  callbacks: {
-                    label: (context) => `${context.raw}kg`,
-                  },
+                  callbacks: { label: (context) => `${context.raw}kg` },
                 },
                 datalabels: {
                   align: 'top',
                   anchor: 'end',
                   offset: 4,
-                  backgroundColor: (context) => {
-                    return context.dataIndex === context.dataset.data.length - 1 ? '#000000' : 'transparent';
-                  },
-                  borderColor: (context) => {
-                    return context.dataIndex === context.dataset.data.length - 1 ? '#000000' : '#E5E7EB';
-                  },
+                  backgroundColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? '#000000' : 'transparent',
+                  borderColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? '#000000' : '#E5E7EB',
                   borderWidth: 1,
                   borderRadius: 4,
-                  padding: { 
-                    top: 2,
-                    bottom: 2,
-                    left: 4,
-                    right: 4
-                  },
-                  color: (context) => {
-                    return context.dataIndex === context.dataset.data.length - 1 ? '#FFFFFF' : '#6B7280';
-                  },
-                  font: {
-                    family: 'Outfit',
-                    weight: 'bold',
-                    size: 9 
-                  },
-                  formatter: (value, context) => {
-                    return percentages[context.dataIndex];
-                  }
+                  padding: { top: 2, bottom: 2, left: 4, right: 4 },
+                  color: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? '#FFFFFF' : '#6B7280',
+                  font: { family: 'Outfit', weight: 'bold', size: 9 },
+                  formatter: (value, ctx) => percentages[ctx.dataIndex]
                 }
               },
               scales: {
-                y: {
-                  beginAtZero: false,
-                  min: minWeight,
-                  max: maxWeight,
-                  grid: {
-                    display: true,
-                    color: '#F3F4F6',
-                    borderDash: [5, 5],
-                    drawBorder: false,
-                  },
-                  ticks: { display: false },
-                  border: { display: false }
-                },
-                x: {
-                  grid: { display: false, drawBorder: false },
-                  ticks: { display: false },
-                  border: { display: false }
-                },
+                y: { beginAtZero: false, min: minWeight, max: maxWeight, grid: { display: true, color: '#F3F4F6', borderDash: [5, 5], drawBorder: false }, ticks: { display: false }, border: { display: false } },
+                x: { grid: { display: false, drawBorder: false }, ticks: { display: false }, border: { display: false } },
               },
             },
             plugins: [customDrawPlugin]
           });
 
           return () => {
-            if (chartInstance.current) {
-              chartInstance.current.destroy();
-            }
+            if (chartInstance.current) chartInstance.current.destroy();
           };
         }, [sets, workLoad]);
 
@@ -493,13 +333,11 @@
         const roundToTen = (val) => Math.round(val / 10) * 10;
         const roundToFive = (val) => Math.round(val / 5) * 5;
 
-        // Função para transição da Calc 1RM para Aquecimento
         const handleTransferWarmup = (weight) => {
           setWorkLoad(weight.toString());
           setActiveTab('warmup');
         };
 
-        // --- LÓGICA DE CÁLCULO ---
         const calculateWarmup = (targetWeight) => {
           if (!targetWeight || targetWeight < 20) return [];
 
@@ -507,43 +345,28 @@
           const isLowWeight = targetWeight < 80;
 
           if (targetWeight <= startWeight) {
-             return [{
-                weight: startWeight,
-                reps: isLowWeight ? 5 : 10,
-                percent: Math.round((startWeight / targetWeight) * 100)
-             }];
+             return [{ weight: startWeight, reps: isLowWeight ? 5 : 10, percent: Math.round((startWeight / targetWeight) * 100) }];
           }
 
           let lastWarmup = roundToTen(targetWeight - 20);
-          if ((targetWeight - lastWarmup) > 20) {
-            lastWarmup = roundToTen(targetWeight - 10);
-          }
+          if ((targetWeight - lastWarmup) > 20) lastWarmup = roundToTen(targetWeight - 10);
           if (lastWarmup >= targetWeight) lastWarmup = targetWeight - 10;
-          
           if (lastWarmup <= startWeight) {
-             return [{
-                weight: startWeight,
-                reps: isLowWeight ? 5 : 10,
-                percent: Math.round((startWeight / targetWeight) * 100)
-             }];
+             return [{ weight: startWeight, reps: isLowWeight ? 5 : 10, percent: Math.round((startWeight / targetWeight) * 100) }];
           }
 
           const minSteps = isLowWeight ? 2 : 3; 
-
           let finalGap = targetWeight - lastWarmup;
           let range = lastWarmup - startWeight;
-          
           let steps = Math.max(minSteps, Math.ceil(range / 40));
           let currentJump = range / steps;
 
           while (currentJump < finalGap && steps > 0) {
              let newLast = lastWarmup + 10;
              if (newLast >= targetWeight) break;
-
              lastWarmup = newLast;
              finalGap = targetWeight - lastWarmup;
              range = lastWarmup - startWeight;
-             
              steps = Math.max(minSteps, Math.ceil(range / 40));
              currentJump = range / steps;
           }
@@ -556,23 +379,17 @@
              for (let i = 1; i <= steps; i++) {
                 let val = startWeight + (stepSize * i);
                 let rounded = roundToTen(val);
-                
                 if (i === steps) rounded = lastWarmup;
-
                 if (targetWeight > 80 && rounded <= warmupWeights[warmupWeights.length - 1]) {
                     let fineRounded = roundToFive(val);
-                    if (fineRounded > warmupWeights[warmupWeights.length - 1]) {
-                        rounded = fineRounded;
-                    } else {
+                    if (fineRounded > warmupWeights[warmupWeights.length - 1]) rounded = fineRounded;
+                    else {
                         if (i < steps) {
                            rounded = warmupWeights[warmupWeights.length - 1] + 5;
                            if (rounded > lastWarmup) rounded = lastWarmup; 
                         }
                     }
-                } else if (rounded <= warmupWeights[warmupWeights.length - 1]) {
-                    continue;
-                }
-
+                } else if (rounded <= warmupWeights[warmupWeights.length - 1]) continue;
                 warmupWeights.push(rounded);
              }
           }
@@ -591,7 +408,6 @@
           return warmupWeights.map((w, i) => {
              let reps = 1;
              const setNum = i + 1;
-             
              if (isLowWeight) {
                  if (setNum === 1) reps = 5;
                  else if (setNum === 2) reps = 3;
@@ -604,12 +420,7 @@
                  else if (setNum === 4) reps = 2;
                  else reps = 1;
              }
-
-             return {
-                weight: w,
-                reps: reps,
-                percent: Math.round((w / targetWeight) * 100)
-             };
+             return { weight: w, reps: reps, percent: Math.round((w / targetWeight) * 100) };
           });
         };
 
@@ -623,66 +434,33 @@
         }, [workLoad]);
 
         const toggleSet = (index) => {
-          if (completed.includes(index)) {
-            setCompleted(completed.filter((i) => i !== index));
-          } else {
-            setCompleted([...completed, index]);
-          }
+          if (completed.includes(index)) setCompleted(completed.filter((i) => i !== index));
+          else setCompleted([...completed, index]);
         };
 
         return (
-          <div
-            className={`min-h-screen bg-white text-black font-sans pb-20 selection:bg-blue-100 selection:text-blue-900`}
-          >
+          <div className="min-h-screen bg-white text-black font-sans pb-20 selection:bg-blue-100 selection:text-blue-900">
             <div className='max-w-xl mx-auto px-6 py-8'>
-              {/* Header Limpo */}
               <div className='mb-8'>
-                <h1
-                  className={`text-4xl font-black tracking-tighter mb-0 text-blue-600`}
-                >
-                  SHEIKO
-                </h1>
-                <p className='text-black text-sm font-bold tracking-widest'>
-                  Protocolo de Elite
-                </p>
+                <h1 className="text-4xl font-black tracking-tighter mb-0 text-blue-600">SHEIKO</h1>
+                <p className='text-black text-sm font-bold tracking-widest'>Protocolo de Elite</p>
               </div>
 
-              {/* Tabs */}
               <div className="flex p-1 bg-gray-100 rounded-xl mb-8">
-                <button
-                  onClick={() => setActiveTab('1rm')}
-                  className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === '1rm' 
-                      ? 'bg-white text-black shadow-sm' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  <Calculator size={24} />
-                  1RM
+                <button onClick={() => setActiveTab('1rm')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === '1rm' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Calculator size={24} /> 1RM
                 </button>
-                <button
-                  onClick={() => setActiveTab('warmup')}
-                  className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    activeTab === 'warmup' 
-                      ? 'bg-white text-black shadow-sm' 
-                      : 'text-gray-400 hover:text-gray-600'
-                  }`}
-                >
-                  <Fire size={24} />
-                  Aquecimento
+                <button onClick={() => setActiveTab('warmup')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'warmup' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                  <Fire size={24} /> Aquecimento
                 </button>
               </div>
 
-              {/* Conteúdo das Abas */}
               {activeTab === '1rm' ? (
                 <OneRepMaxCalc onCalculateWarmup={handleTransferWarmup} />
               ) : (
                 <div className="fade-in">
-                  {/* Input Carga */}
                   <div className='mb-10'>
-                    <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>
-                      Carga de Trabalho (Work Set)
-                    </label>
+                    <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>Carga de Trabalho (Work Set)</label>
                     <div className='relative group'>
                       <input
                         type='number'
@@ -692,190 +470,77 @@
                         className='w-full text-7xl font-black border-b-4 border-gray-200 py-4 focus:outline-none focus:border-black transition-colors bg-transparent placeholder-gray-200'
                         step='any'
                       />
-                      <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>
-                        KG
-                      </span>
+                      <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>KG</span>
                     </div>
-
                     {workLoad && parseFloat(workLoad) > 0 && (
-                        <div
-                          className={`flex items-center gap-2 mt-2 text-blue-600 text-xs font-medium bg-blue-50 p-2 rounded-lg`}
-                        >
+                        <div className="flex items-center gap-2 mt-2 text-blue-600 text-xs font-medium bg-blue-50 p-2 rounded-lg">
                           <AlertCircle size={14} />
-                          <span>
-                            {parseFloat(workLoad) < 80 
-                              ? "Carga < 80kg: Início 20kg (5 reps)." 
-                              : "Carga ≥ 80kg: Início 20kg (10 reps)."}
-                          </span>
+                          <span>{parseFloat(workLoad) < 80 ? "Carga < 80kg: Início 20kg (5 reps)." : "Carga ≥ 80kg: Início 20kg (10 reps)."}</span>
                         </div>
                       )}
                   </div>
 
-                  {/* Gráfico de Aquecimento */}
                   {sets.length > 0 && <WarmupChart sets={sets} workLoad={workLoad} />}
 
-                  {/* Lista Aquecimento */}
                   <div className='space-y-3 relative'>
                     {sets.length > 0 && (
                       <div className='flex items-center gap-2 mb-4'>
-                        <span className='bg-black text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>
-                          Aquecimento
-                        </span>
+                        <span className='bg-black text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>Aquecimento</span>
                         <div className='h-px bg-gray-200 flex-grow'></div>
                       </div>
                     )}
 
                     {sets.length > 0 && (
-                      <div className='absolute left-[26px] top-10 bottom-10 w-0.5 -z-10'>
-                        {/* Linha vertical removida */}
-                      </div>
+                      <div className='absolute left-[26px] top-10 bottom-10 w-0.5 -z-10'></div>
                     )}
 
                     {sets.map((set, index) => {
                       const isDone = completed.includes(index);
-                      const isNext =
-                        !isDone && (index === 0 || completed.includes(index - 1));
+                      const isNext = !isDone && (index === 0 || completed.includes(index - 1));
                       const prevWeight = index === 0 ? 0 : sets[index - 1].weight;
                       const jump = index === 0 ? 0 : set.weight - prevWeight;
 
                       return (
-                        <div
-                          key={index}
-                          onClick={() => toggleSet(index)}
-                          className={`
-                                                            relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none
-                                                            ${
-                                                              isDone
-                                                                ? 'opacity-30 grayscale blur-[0.5px]'
-                                                                : 'opacity-100'
-                                                            }
-                                                            ${
-                                                              isNext
-                                                                ? `bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50`
-                                                                : 'bg-white border border-gray-100 hover:border-gray-300'
-                                                            }
-                                                          `}
-                        >
-                          <div
-                            className={`
-                                                                        flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all
-                                                                        ${
-                                                                          isDone
-                                                                            ? 'bg-black border-black'
-                                                                            : isNext
-                                                                            ? 'bg-white border-transparent text-black'
-                                                                            : 'bg-gray-100 border-transparent text-gray-300 group-hover:border-gray-400'
-                                                                        }
-                                                                      `}
-                          >
-                            {isDone ? (
-                              <Check size={24} className='text-white' />
-                            ) : (
-                              <span className='text-lg font-bold'>{index + 1}</span>
-                            )}
+                        <div key={index} onClick={() => toggleSet(index)} className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${isDone ? 'opacity-30 grayscale blur-[0.5px]' : 'opacity-100'} ${isNext ? 'bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50' : 'bg-white border border-gray-100 hover:border-gray-300'}`}>
+                          <div className="flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all">
+                            {isDone ? <Check size={24} /> : <span className='text-lg font-bold'>{index + 1}</span>}
                           </div>
-
                           <div className='flex-grow flex flex-col justify-center'>
                             <div className='flex items-baseline gap-2'>
-                              <span className='text-4xl font-black tracking-tight leading-none'>
-                                {set.weight}
-                              </span>
-                              <span
-                                className={`text-xs font-bold uppercase tracking-wider ${
-                                  isNext ? 'text-gray-400' : 'text-gray-400'
-                                }`}
-                              >
-                                kg
-                              </span>
+                              <span className='text-4xl font-black tracking-tight leading-none'>{set.weight}</span>
+                              <span className='text-xs font-bold uppercase tracking-wider text-gray-400'>kg</span>
                             </div>
-
                             <div className='flex items-center gap-3 mt-1'>
-                              {index > 0 && (
-                                <span
-                                  className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded ${
-                                    isNext
-                                      ? 'bg-white/20 text-gray-200'
-                                      : 'bg-gray-100 text-gray-500'
-                                  }`}
-                                >
-                                  <ArrowRight size={10} /> +{jump}kg
-                                </span>
-                              )}
-                              <span
-                                className={`text-[10px] font-bold ${
-                                  isNext ? 'text-gray-500' : 'text-gray-400'
-                                }`}
-                              >
-                                {set.percent}%
-                              </span>
+                              {index > 0 && <span className='text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-500'><ArrowRight size={10} /> +{jump}kg</span>}
+                              <span className='text-[10px] font-bold text-gray-400'>{set.percent}%</span>
                             </div>
                           </div>
-
                           <div className='text-right min-w-[60px]'>
-                            <div
-                              className={`text-4xl font-black leading-none ${
-                                isNext ? 'text-white' : 'text-black'
-                              }`}
-                            >
-                              {set.reps}
-                            </div>
-                            <div
-                              className={`text-[9px] uppercase font-bold tracking-widest mt-1 ${
-                                isNext ? 'text-gray-400' : 'text-gray-400'
-                              }`}
-                            >
-                              Reps
-                            </div>
+                            <div className='text-4xl font-black leading-none'>{set.reps}</div>
+                            <div className='text-[9px] uppercase font-bold tracking-widest mt-1 text-gray-400'>Reps</div>
                           </div>
                         </div>
                       );
                     })}
 
-                    {/* Work Set Card */}
                     {workLoad && sets.length > 0 && (
                       <div className='pt-8'>
                         <div className='flex items-center gap-2 mb-4'>
-                          <span
-                            className={`bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider`}
-                          >
-                            Work Set
-                          </span>
+                          <span className='bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>Work Set</span>
                           <div className='h-px bg-blue-100 flex-grow'></div>
                         </div>
-
-                        <div
-                          className={`flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden`}
-                        >
-                          <div
-                            className={`absolute top-0 right-0 p-4 opacity-10 text-blue-600`}
-                          >
-                            <Hash size={120} />
-                          </div>
-
-                          <div
-                            className={`w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-lg shadow-blue-200`}
-                          >
+                        <div className='flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden'>
+                          <div className='absolute top-0 right-0 p-4 opacity-10 text-blue-600'><Hash size={120} /></div>
+                          <div className='w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-lg shadow-blue-200'>
                             <Dumbbell size={24} />
                           </div>
                           <div className='z-10'>
-                            <div
-                              className={`text-xs font-bold uppercase tracking-widest text-blue-400 mb-1`}
-                            >
-                              5 Séries de Trabalho
-                            </div>
+                            <div className='text-xs font-bold uppercase tracking-widest text-blue-400 mb-1'>5 Séries de Trabalho</div>
                             <div className='flex items-baseline gap-2'>
-                              <span className='text-5xl font-black text-black tracking-tighter'>
-                                {workLoad}
-                              </span>
-                              <span className='text-xl text-gray-400 font-bold'>
-                                KG
-                              </span>
+                              <span className='text-5xl font-black text-black tracking-tighter'>{workLoad}</span>
+                              <span className='text-xl text-gray-400 font-bold'>KG</span>
                             </div>
-                            <div
-                              className={`mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100`}
-                            >
-                              5 x 5 Reps
-                            </div>
+                            <div className='mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100'>5 x 5 Reps</div>
                           </div>
                         </div>
                       </div>
@@ -895,11 +560,9 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Nuclear fix: Try to update the service worker with versioning query string
-                navigator.serviceWorker.register('./sw.js?v=3.0')
+                navigator.serviceWorker.register('./sw.js?v=3.2')
                     .then(reg => {
                         console.log('SW registrado com sucesso:', reg.scope);
-                         // Force update attempt
                         reg.update();
                     })
                     .catch(err => console.error('Erro ao registrar SW:', err));
