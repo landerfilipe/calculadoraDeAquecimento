@@ -2,6 +2,12 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
+    <!-- Adicionado cache-control para forçar validação no servidor -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    
+    <meta name="application-name" content="SHEIKO v3.0" />
     <meta
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
@@ -43,6 +49,7 @@
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
         background-color: #ffffff;
+        -webkit-font-smoothing: antialiased;
       }
       input::-webkit-outer-spin-button,
       input::-webkit-inner-spin-button {
@@ -53,10 +60,10 @@
         -moz-appearance: textfield;
       }
       .fade-in {
-        animation: fadeIn 0.4s ease-out;
+        animation: fadeIn 0.3s ease-out;
       }
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
       }
     </style>
@@ -225,7 +232,6 @@
             chartInstance.current.destroy();
           }
 
-          // Adicionar o Work Set aos dados do gráfico
           const chartDataSets = [
             ...sets,
             { weight: parseFloat(workLoad), percent: 100, isWorkSet: true }
@@ -235,41 +241,36 @@
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
 
-          // Calcular Min e Max para "agarrar" o gráfico nas bordas verticais
           const minWeight = Math.min(...data);
           const maxWeight = Math.max(...data);
 
-          // Plugin Customizado para linha vertical de bolinhas
           const customDrawPlugin = {
             id: 'customDrawPlugin',
             afterDatasetsDraw: (chart) => {
-              const { ctx, chartArea, scales: { x, y } } = chart;
+              if (!chart || !chart.ctx || !chart.chartArea || !chart.scales) return;
               
-              // Verificação de segurança para evitar erro de renderização
-              if (!chartArea) return;
+              const { ctx, chartArea } = chart;
               const { top, bottom, left, right } = chartArea;
 
               chart.data.datasets.forEach((dataset, i) => {
                  const meta = chart.getDatasetMeta(i);
-                 if (!meta.hidden) {
+                 if (meta && !meta.hidden && meta.data) {
                    meta.data.forEach((point, index) => {
-                     // Segurança: Ignorar pontos sem coordenadas válidas
                      if (
-                        typeof point.x !== 'number' || isNaN(point.x) ||
-                        typeof point.y !== 'number' || isNaN(point.y) ||
-                        point.y > bottom || point.y < top ||
-                        point.x < left || point.x > right
+                        !point ||
+                        typeof point.x !== 'number' || !isFinite(point.x) ||
+                        typeof point.y !== 'number' || !isFinite(point.y)
                      ) {
                        return;
                      }
 
-                     // 1. Linha Vertical de Bolinhas
                      ctx.save();
                      ctx.beginPath();
-                     ctx.strokeStyle = '#CBD5E1'; // Cinza (Slate-300)
+                     ctx.strokeStyle = '#CBD5E1'; 
                      ctx.lineWidth = 2;
-                     ctx.setLineDash([0, 5]); // Efeito de bolinha (traço zero, espaço 5)
-                     ctx.lineCap = 'round';   // Ponta redonda
+                     ctx.setLineDash([0, 5]); 
+                     ctx.lineCap = 'round';   
+                     
                      ctx.moveTo(point.x, bottom);
                      ctx.lineTo(point.x, point.y);
                      ctx.stroke();
@@ -293,8 +294,8 @@
                   backgroundColor: (context) => {
                     const ctx = context.chart.ctx;
                     const gradient = ctx.createLinearGradient(0, 0, 0, 250);
-                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); // Topo 30%
-                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  // Base Transparente
+                    gradient.addColorStop(0, 'rgba(37, 99, 235, 0.3)'); 
+                    gradient.addColorStop(1, 'rgba(37, 99, 235, 0.0)');  
                     return gradient;
                   },
                   pointBackgroundColor: '#ffffff',
@@ -306,7 +307,6 @@
                   pointRadius: (ctx) => {
                     const index = ctx.dataIndex;
                     const count = ctx.dataset.data.length;
-                    
                     if (index === 0 || index === count - 1) return 2;
                     return 1;
                   },
@@ -314,14 +314,14 @@
                   pointHoverRadius: 6,
                   tension: 0.1,
                   fill: true,
-                  clip: false, // Impede que bolinhas nas bordas sejam cortadas
+                  clip: false, 
                 },
               ],
             },
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              animation: true, 
+              animation: true,
               layout: {
                 padding: {
                   top: 40, 
@@ -331,9 +331,7 @@
                 }
               },
               plugins: {
-                legend: {
-                  display: false,
-                },
+                legend: { display: false },
                 tooltip: {
                   backgroundColor: '#1F2937',
                   padding: 10,
@@ -424,16 +422,14 @@
         const calculatePercentage = (percent) => {
           if (!oneRepMax) return 0;
           const rawWeight = parseFloat(oneRepMax) * (percent / 100);
-          
-          // Lógica de arredondamento: Par mais próximo (ROUND)
           return Math.round(rawWeight / 2) * 2;
         };
 
         const repRanges = [
-          { reps: 5, percent: 80 },
+          { reps: 5, percent: 77.5 },
           { reps: 8, percent: 75 },
-          { reps: 12, percent: 70 },
-          { reps: 15, percent: 65 },
+          { reps: 12, percent: 72.5 },
+          { reps: 15, percent: 70 },
         ];
 
         return (
@@ -632,19 +628,6 @@
           } else {
             setCompleted([...completed, index]);
           }
-        };
-
-        const themeColor = {
-          text: 'text-blue-600',
-          bg: 'bg-blue-600',
-          bgLight: 'bg-blue-50',
-          border: 'border-blue-600',
-          borderLight: 'border-blue-100',
-          shadow: 'shadow-blue-200',
-          ring: 'ring-blue-50',
-          selectionBg: 'selection:bg-blue-100',
-          selectionText: 'selection:text-blue-900',
-          subText: 'text-blue-400',
         };
 
         return (
@@ -912,8 +895,13 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado com sucesso:', reg.scope))
+                // Nuclear fix: Try to update the service worker with versioning query string
+                navigator.serviceWorker.register('./sw.js?v=3.0')
+                    .then(reg => {
+                        console.log('SW registrado com sucesso:', reg.scope);
+                         // Force update attempt
+                        reg.update();
+                    })
                     .catch(err => console.error('Erro ao registrar SW:', err));
             });
         }
