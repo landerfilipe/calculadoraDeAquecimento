@@ -38,7 +38,8 @@
     <style>
       body {
         font-family: 'Outfit', sans-serif;
-        overscroll-behavior-y: none; /* Evita bounce no mobile */
+        overscroll-behavior-y: none;
+        overflow-x: hidden; /* Previne riscos laterais e rolagem horizontal */
       }
       /* Remove setas do input number */
       input::-webkit-outer-spin-button,
@@ -222,6 +223,7 @@
             chartInstance.current.destroy();
           }
 
+          // Adicionar o Work Set aos dados do gráfico
           const chartDataSets = [
             ...sets,
             { weight: parseFloat(workLoad), percent: 100, isWorkSet: true }
@@ -247,7 +249,6 @@
                  const meta = chart.getDatasetMeta(i);
                  if (!meta.hidden) {
                    meta.data.forEach((point, index) => {
-                     // VERIFICAÇÃO DE SEGURANÇA: Garante que o ponto está dentro da área do gráfico
                      if (
                         typeof point.x !== 'number' || isNaN(point.x) ||
                         typeof point.y !== 'number' || isNaN(point.y) ||
@@ -264,7 +265,6 @@
                      ctx.setLineDash([0, 5]); 
                      ctx.lineCap = 'round';   
                      
-                     // Desenha estritamente dentro da área (do fundo até o ponto)
                      ctx.moveTo(point.x, bottom);
                      ctx.lineTo(point.x, point.y);
                      ctx.stroke();
@@ -295,13 +295,17 @@
                   pointBackgroundColor: '#ffffff',
                   pointBorderColor: '#2563EB',
                   pointBorderWidth: 2,
+                  
                   pointStyle: 'circle',
+
                   pointRadius: (ctx) => {
                     const index = ctx.dataIndex;
                     const count = ctx.dataset.data.length;
+                    
                     if (index === 0 || index === count - 1) return 2;
                     return 1;
                   },
+                  
                   pointHoverRadius: 6,
                   tension: 0.1,
                   fill: true,
@@ -312,6 +316,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
+              animation: true, // ANIMAÇÃO REATIVADA
               layout: {
                 padding: {
                   top: 40, 
@@ -477,7 +482,7 @@
 
       // --- APLICATIVO SHEIKO ---
       const SheikoApp = () => {
-        const [activeTab, setActiveTab] = React.useState('1rm'); // '1rm' | 'warmup'
+        const [activeTab, setActiveTab] = React.useState('1rm'); 
         const [workLoad, setWorkLoad] = React.useState('');
         const [sets, setSets] = React.useState([]);
         const [completed, setCompleted] = React.useState([]);
@@ -627,18 +632,16 @@
             className={`min-h-screen bg-white text-black font-sans pb-20 selection:bg-blue-100 selection:text-blue-900`}
           >
             <div className='max-w-xl mx-auto px-6 py-8'>
-              {/* Header - Totalmente Limpo e Seguro */}
-              <div className='mb-8 flex items-center justify-between'>
-                <div>
-                  <h1
-                    className={`text-4xl font-black tracking-tighter mb-0 text-blue-600`}
-                  >
-                    SHEIKO
-                  </h1>
-                  <p className='text-black text-sm font-bold tracking-widest'>
-                    Protocolo de Elite
-                  </p>
-                </div>
+              {/* Header Limpo */}
+              <div className='mb-8'>
+                <h1
+                  className={`text-4xl font-black tracking-tighter mb-0 text-blue-600`}
+                >
+                  SHEIKO
+                </h1>
+                <p className='text-black text-sm font-bold tracking-widest'>
+                  Protocolo de Elite
+                </p>
               </div>
 
               {/* Tabs */}
@@ -823,7 +826,7 @@
                       );
                     })}
 
-                    {/* Work Set Card */}
+                    {/* Work Set Card - Dumbbell Restaurado */}
                     {workLoad && sets.length > 0 && (
                       <div className='pt-8'>
                         <div className='flex items-center gap-2 mb-4'>
