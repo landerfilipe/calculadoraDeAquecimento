@@ -249,6 +249,7 @@
                 datalabels: {
                   align: 'top',
                   anchor: 'end',
+                  // ALTERADO: Reduzido de 6 para 4 conforme solicitado
                   offset: 4,
                   backgroundColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? '#000000' : 'transparent',
                   borderColor: (ctx) => ctx.dataIndex === ctx.dataset.data.length - 1 ? '#000000' : '#E5E7EB',
@@ -380,7 +381,6 @@
           
           // Se a carga for igual ao peso da barra
           if (targetWeight === startWeight) {
-             // Alterado para 10 reps para consistência com a regra "A primeira sempre será 10"
              return [{ weight: startWeight, reps: 10, percent: 100 }];
           }
 
@@ -401,7 +401,6 @@
               if (lastWarmup < startWeight) continue;
               
               if (lastWarmup === startWeight) {
-                  // Alterado: Removemos a lógica ternária de < 80kg. Sempre 10 reps na primeira.
                   return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
               }
 
@@ -410,16 +409,12 @@
               const minChunk = Math.ceil(jump / 10) * 10; 
               const maxChunk = 40; 
               
-              // Modificado de 'const' para 'let' para permitir ajuste
               let stepsCount = Math.ceil(dist / maxChunk);
 
-              // --- NOVA LÓGICA: FORÇA MÍNIMO DE 3 SÉRIES PARA > 60KG ---
-              // Total de séries = 1 (barra vazia) + stepsCount.
-              // Para ter 3 séries no total, stepsCount deve ser >= 2.
+              // LÓGICA: FORÇA MÍNIMO DE 3 SÉRIES PARA > 60KG
               if (targetWeight > 60 && stepsCount < 2) {
                   stepsCount = 2;
               }
-              // -----------------------------------------------------------
               
               const minTotalCapacity = stepsCount * minChunk;
               
@@ -446,17 +441,31 @@
                       currentSteps--;
                   }
                   
-                  // Aplica lógica de repetições (ALTERADO: Decrescente estrito)
+                  // Aplica lógica de repetições CUSTOMIZADA baseada na quantidade total de séries
                   return weights.map((w, i) => {
                      let reps = 1;
-                     const setNum = i + 1;
-                     
-                     // NOVA LÓGICA: Sempre 10, 5, 3, 2, 1...
-                     if (setNum === 1) reps = 10;
-                     else if (setNum === 2) reps = 5;
-                     else if (setNum === 3) reps = 3;
-                     else if (setNum === 4) reps = 2;
-                     else reps = 1;
+                     const totalSets = weights.length;
+
+                     if (i === 0) {
+                         // Primeira série sempre 10
+                         reps = 10;
+                     } else {
+                         // Lógica baseada no total de séries
+                         if (totalSets === 2) {
+                             // Se temos apenas 2 séries: [10, 2]
+                             if (i === 1) reps = 2;
+                         } else if (totalSets === 3) {
+                             // Se temos 3 séries: [10, 5, 2]
+                             if (i === 1) reps = 5;
+                             else if (i === 2) reps = 2;
+                         } else {
+                             // Se temos 4 ou mais séries: [10, 5, 3, 2, 1, 1...]
+                             if (i === 1) reps = 5;
+                             else if (i === 2) reps = 3;
+                             else if (i === 3) reps = 2;
+                             else reps = 1; // 5ª série em diante
+                         }
+                     }
                      
                      return { weight: w, reps: reps, percent: Math.round((w / targetWeight) * 100) };
                   });
@@ -514,7 +523,6 @@
                       />
                       <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>KG</span>
                     </div>
-                    {/* REMOVIDO: Bloco de alerta condicional sobre < 80kg */}
                   </div>
 
                   {sets.length > 0 && <WarmupChart sets={sets} workLoad={workLoad} />}
