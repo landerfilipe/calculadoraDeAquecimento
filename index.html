@@ -57,6 +57,7 @@
       input[type='number'] {
         -moz-appearance: textfield;
       }
+      /* Container seguro para PWA */
       #root {
         width: 100%;
         min-height: 100vh;
@@ -65,16 +66,11 @@
         z-index: 0;
       }
       .fade-in {
-        animation: fadeIn 0.3s ease-out;
+        animation: fadeIn 0.4s ease-out;
       }
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(5px); }
+        from { opacity: 0; transform: translateY(10px); }
         to { opacity: 1; transform: translateY(0); }
-      }
-      /* Classe para forçar recorte e evitar vazamento de pixels */
-      .clip-fix {
-        overflow: hidden;
-        transform: translateZ(0);
       }
     </style>
   </head>
@@ -117,6 +113,8 @@
           <circle cx='12' cy='12' r='10' /><line x1='12' x2='12' y1='8' y2='12' /><line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
+      
+      // Ícone Hash REMOVIDO para evitar glitches visuais
 
       // --- COMPONENTE DO GRÁFICO ---
       const WarmupChart = ({ sets, workLoad }) => {
@@ -125,8 +123,12 @@
 
         React.useEffect(() => {
           if (!chartRef.current || sets.length === 0) return;
+
           const ctx = chartRef.current.getContext('2d');
-          if (chartInstance.current) chartInstance.current.destroy();
+
+          if (chartInstance.current) {
+            chartInstance.current.destroy();
+          }
 
           const chartDataSets = [
             ...sets,
@@ -136,6 +138,7 @@
           const labels = chartDataSets.map((_, i) => i === chartDataSets.length - 1 ? 'Work' : `Série ${i + 1}`);
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
+
           const minWeight = Math.min(...data);
           const maxWeight = Math.max(...data);
 
@@ -201,7 +204,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              animation: false, // DESATIVADO PARA EVITAR RISCOS NO PWA
+              animation: { duration: 600, easing: 'easeOutQuart' }, // ANIMAÇÃO ATIVADA
               layout: { padding: { top: 40, right: 30, left: 30, bottom: 15 } },
               plugins: {
                 legend: { display: false },
@@ -241,9 +244,8 @@
 
         if (sets.length === 0) return null;
 
-        // Adicionada classe clip-fix para conter qualquer desenho fora da caixa
         return (
-          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 relative clip-fix">
+          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 relative">
              <div className="absolute top-4 left-4 z-10">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Progressão de Carga</p>
              </div>
@@ -556,8 +558,11 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('SW registrado com sucesso:', reg.scope))
+                navigator.serviceWorker.register('./sw.js?v=4.0')
+                    .then(reg => {
+                        console.log('SW registrado com sucesso:', reg.scope);
+                        reg.update();
+                    })
                     .catch(err => console.error('Erro ao registrar SW:', err));
             });
         }
