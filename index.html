@@ -10,7 +10,6 @@
     <title>SHEIKO - Protocolo de Elite</title>
     <link rel="manifest" href="manifest.json">
     
-    <!-- Evitar cache agressivo do HTML -->
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
@@ -58,7 +57,6 @@
       input[type='number'] {
         -moz-appearance: textfield;
       }
-      /* Container seguro para PWA */
       #root {
         width: 100%;
         min-height: 100vh;
@@ -66,19 +64,17 @@
         position: relative;
         z-index: 0;
       }
-      /* Correção de renderização para evitar glitches */
-      .gpu-safe {
-        transform: translate3d(0,0,0);
-        backface-visibility: hidden;
-        perspective: 1000px;
-        will-change: transform, opacity;
-      }
       .fade-in {
-        animation: fadeIn 0.4s ease-out;
+        animation: fadeIn 0.3s ease-out;
       }
       @keyframes fadeIn {
-        from { opacity: 0; transform: translateY(10px); }
+        from { opacity: 0; transform: translateY(5px); }
         to { opacity: 1; transform: translateY(0); }
+      }
+      /* Classe para forçar recorte e evitar vazamento de pixels */
+      .clip-fix {
+        overflow: hidden;
+        transform: translateZ(0);
       }
     </style>
   </head>
@@ -121,7 +117,6 @@
           <circle cx='12' cy='12' r='10' /><line x1='12' x2='12' y1='8' y2='12' /><line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
-      // REMOVIDOS ÍCONES COMPLEXOS (HASH, LAYERS) PARA LIMPAR RENDERIZAÇÃO
 
       // --- COMPONENTE DO GRÁFICO ---
       const WarmupChart = ({ sets, workLoad }) => {
@@ -206,7 +201,7 @@
             options: {
               responsive: true,
               maintainAspectRatio: false,
-              animation: true,
+              animation: false, // DESATIVADO PARA EVITAR RISCOS NO PWA
               layout: { padding: { top: 40, right: 30, left: 30, bottom: 15 } },
               plugins: {
                 legend: { display: false },
@@ -246,9 +241,9 @@
 
         if (sets.length === 0) return null;
 
-        // FUNDO BRANCO SÓLIDO PARA O CONTAINER DO GRÁFICO
+        // Adicionada classe clip-fix para conter qualquer desenho fora da caixa
         return (
-          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 p-4 mb-6 relative gpu-safe" style={{ backgroundColor: '#fff' }}>
+          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 relative clip-fix">
              <div className="absolute top-4 left-4 z-10">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Progressão de Carga</p>
              </div>
@@ -267,7 +262,6 @@
           return Math.round(rawWeight / 2) * 2;
         };
 
-        // NOVAS PORCENTAGENS SOLICITADAS
         const repRanges = [
           { reps: 5, percent: 80 },
           { reps: 8, percent: 75 },
@@ -276,7 +270,7 @@
         ];
 
         return (
-          <div className="space-y-6 fade-in gpu-safe">
+          <div className="space-y-6 fade-in">
              <div className='mb-6'>
                 <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>
                   Seu 1RM (Repetição Máxima)
@@ -449,7 +443,7 @@
                 <p className='text-black text-sm font-bold tracking-widest'>Protocolo de Elite</p>
               </div>
 
-              <div className="flex p-1 bg-gray-100 rounded-xl mb-8 gpu-safe">
+              <div className="flex p-1 bg-gray-100 rounded-xl mb-8">
                 <button onClick={() => setActiveTab('1rm')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === '1rm' ? 'bg-white text-black shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>
                   <Calculator size={24} /> 1RM
                 </button>
@@ -461,7 +455,7 @@
               {activeTab === '1rm' ? (
                 <OneRepMaxCalc onCalculateWarmup={handleTransferWarmup} />
               ) : (
-                <div className="fade-in gpu-safe">
+                <div className="fade-in">
                   <div className='mb-10'>
                     <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>Carga de Trabalho (Work Set)</label>
                     <div className='relative group'>
@@ -529,43 +523,20 @@
                     {workLoad && sets.length > 0 && (
                       <div className='pt-8'>
                         <div className='flex items-center gap-2 mb-4'>
-                          <span
-                            className={`bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider`}
-                          >
-                            Work Set
-                          </span>
+                          <span className='bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>Work Set</span>
                           <div className='h-px bg-blue-100 flex-grow'></div>
                         </div>
-
-                        {/* SEM SOMBRAS, BG FLAT PARA EVITAR GLITCH */}
-                        <div
-                          className={`flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 relative overflow-hidden relative z-10`}
-                          style={{ backgroundColor: '#eff6ff' }}
-                        >
-                          <div
-                            className={`w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10`}
-                          >
+                        <div className='flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden relative z-10 bg-white'>
+                          <div className='w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-lg shadow-blue-200'>
                             <Dumbbell size={24} />
                           </div>
                           <div className='z-10'>
-                            <div
-                              className={`text-xs font-bold uppercase tracking-widest text-blue-400 mb-1`}
-                            >
-                              5 Séries de Trabalho
-                            </div>
+                            <div className='text-xs font-bold uppercase tracking-widest text-blue-400 mb-1'>5 Séries de Trabalho</div>
                             <div className='flex items-baseline gap-2'>
-                              <span className='text-5xl font-black text-black tracking-tighter'>
-                                {workLoad}
-                              </span>
-                              <span className='text-xl text-gray-400 font-bold'>
-                                KG
-                              </span>
+                              <span className='text-5xl font-black text-black tracking-tighter'>{workLoad}</span>
+                              <span className='text-xl text-gray-400 font-bold'>KG</span>
                             </div>
-                            <div
-                              className={`mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 border border-blue-100`}
-                            >
-                              5 x 5 Reps
-                            </div>
+                            <div className='mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100'>5 x 5 Reps</div>
                           </div>
                         </div>
                       </div>
@@ -585,12 +556,8 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Atualizado para v3.5 para garantir nova instalação
-                navigator.serviceWorker.register('./sw.js?v=3.5')
-                    .then(reg => {
-                        console.log('SW registrado com sucesso:', reg.scope);
-                        reg.update();
-                    })
+                navigator.serviceWorker.register('./sw.js')
+                    .then(reg => console.log('SW registrado com sucesso:', reg.scope))
                     .catch(err => console.error('Erro ao registrar SW:', err));
             });
         }
