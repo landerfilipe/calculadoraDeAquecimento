@@ -66,6 +66,13 @@
         position: relative;
         z-index: 0;
       }
+      /* Correção de renderização para evitar glitches */
+      .gpu-safe {
+        transform: translate3d(0,0,0);
+        backface-visibility: hidden;
+        perspective: 1000px;
+        will-change: transform, opacity;
+      }
       .fade-in {
         animation: fadeIn 0.4s ease-out;
       }
@@ -114,13 +121,7 @@
           <circle cx='12' cy='12' r='10' /><line x1='12' x2='12' y1='8' y2='12' /><line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
-      // Ícone Layers mantido
-      const Layers = ({ className, size = 24 }) => (
-        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
-          <polygon points='12 2 2 7 12 12 22 7 12 2' /><polyline points='2 17 12 22 22 17' /><polyline points='2 12 12 17 22 12' />
-        </svg>
-      );
-      // REMOVIDO ÍCONE "HASH" QUE CAUSAVA O GLITCH VISUAL
+      // REMOVIDOS ÍCONES COMPLEXOS (HASH, LAYERS) PARA LIMPAR RENDERIZAÇÃO
 
       // --- COMPONENTE DO GRÁFICO ---
       const WarmupChart = ({ sets, workLoad }) => {
@@ -153,7 +154,6 @@
                  const meta = chart.getDatasetMeta(i);
                  if (meta && !meta.hidden && meta.data) {
                    meta.data.forEach((point, index) => {
-                     // Check de sanidade das coordenadas
                      if (!point || typeof point.x !== 'number' || !isFinite(point.x) || typeof point.y !== 'number' || !isFinite(point.y)) return;
                      
                      ctx.save();
@@ -246,8 +246,9 @@
 
         if (sets.length === 0) return null;
 
+        // FUNDO BRANCO SÓLIDO PARA O CONTAINER DO GRÁFICO
         return (
-          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 shadow-sm p-4 mb-6 relative">
+          <div className="w-full h-48 bg-white rounded-xl border border-gray-100 p-4 mb-6 relative gpu-safe" style={{ backgroundColor: '#fff' }}>
              <div className="absolute top-4 left-4 z-10">
                 <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Progressão de Carga</p>
              </div>
@@ -266,15 +267,16 @@
           return Math.round(rawWeight / 2) * 2;
         };
 
+        // NOVAS PORCENTAGENS SOLICITADAS
         const repRanges = [
-          { reps: 5, percent: 77.5 },
+          { reps: 5, percent: 80 },
           { reps: 8, percent: 75 },
-          { reps: 12, percent: 72.5 },
-          { reps: 15, percent: 70 },
+          { reps: 12, percent: 70 },
+          { reps: 15, percent: 65 },
         ];
 
         return (
-          <div className="space-y-6 fade-in">
+          <div className="space-y-6 fade-in gpu-safe">
              <div className='mb-6'>
                 <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>
                   Seu 1RM (Repetição Máxima)
@@ -299,7 +301,7 @@
                   {repRanges.map((range) => {
                     const weight = calculatePercentage(range.percent);
                     return (
-                      <div key={range.reps} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors">
+                      <div key={range.reps} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl border border-gray-100 hover:border-blue-200 transition-colors" style={{ backgroundColor: '#f9fafb' }}>
                         <div>
                           <div className="flex items-baseline gap-2">
                             <span className="text-3xl font-black text-gray-800">{weight}</span>
@@ -447,11 +449,11 @@
                 <p className='text-black text-sm font-bold tracking-widest'>Protocolo de Elite</p>
               </div>
 
-              <div className="flex p-1 bg-gray-100 rounded-xl mb-8">
-                <button onClick={() => setActiveTab('1rm')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === '1rm' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+              <div className="flex p-1 bg-gray-100 rounded-xl mb-8 gpu-safe">
+                <button onClick={() => setActiveTab('1rm')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === '1rm' ? 'bg-white text-black shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>
                   <Calculator size={24} /> 1RM
                 </button>
-                <button onClick={() => setActiveTab('warmup')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'warmup' ? 'bg-white text-black shadow-sm' : 'text-gray-400 hover:text-gray-600'}`}>
+                <button onClick={() => setActiveTab('warmup')} className={`flex-1 py-3 px-4 rounded-lg text-sm font-bold transition-all flex items-center justify-center gap-2 ${activeTab === 'warmup' ? 'bg-white text-black shadow-sm border border-gray-100' : 'text-gray-400 hover:text-gray-600'}`}>
                   <Fire size={24} /> Aquecimento
                 </button>
               </div>
@@ -459,7 +461,7 @@
               {activeTab === '1rm' ? (
                 <OneRepMaxCalc onCalculateWarmup={handleTransferWarmup} />
               ) : (
-                <div className="fade-in">
+                <div className="fade-in gpu-safe">
                   <div className='mb-10'>
                     <label className='block text-xs font-bold uppercase tracking-widest text-gray-400 mb-3'>Carga de Trabalho (Work Set)</label>
                     <div className='relative group'>
@@ -502,23 +504,23 @@
                       const jump = index === 0 ? 0 : set.weight - prevWeight;
 
                       return (
-                        <div key={index} onClick={() => toggleSet(index)} className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${isDone ? 'opacity-30 grayscale blur-[0.5px]' : 'opacity-100'} ${isNext ? 'bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50' : 'bg-white border border-gray-100 hover:border-gray-300'}`}>
-                          <div className="flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all">
+                        <div key={index} onClick={() => toggleSet(index)} className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${isDone ? 'opacity-30 grayscale blur-[0.5px]' : 'opacity-100'} ${isNext ? 'bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50' : 'bg-white border border-gray-100 hover:border-gray-300'}`} style={{ backgroundColor: isNext ? '#000' : '#fff' }}>
+                          <div className={`flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all ${isNext ? 'border-white' : 'border-current'}`}>
                             {isDone ? <Check size={24} /> : <span className='text-lg font-bold'>{index + 1}</span>}
                           </div>
                           <div className='flex-grow flex flex-col justify-center'>
                             <div className='flex items-baseline gap-2'>
                               <span className='text-4xl font-black tracking-tight leading-none'>{set.weight}</span>
-                              <span className='text-xs font-bold uppercase tracking-wider text-gray-400'>kg</span>
+                              <span className='text-xs font-bold uppercase tracking-wider opacity-70'>kg</span>
                             </div>
                             <div className='flex items-center gap-3 mt-1'>
-                              {index > 0 && <span className='text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 text-gray-500'><ArrowRight size={10} /> +{jump}kg</span>}
-                              <span className='text-[10px] font-bold text-gray-400'>{set.percent}%</span>
+                              {index > 0 && <span className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded ${isNext ? 'bg-white/20' : 'bg-gray-100 text-gray-500'}`}><ArrowRight size={10} /> +{jump}kg</span>}
+                              <span className='text-[10px] font-bold opacity-70'>{set.percent}%</span>
                             </div>
                           </div>
                           <div className='text-right min-w-[60px]'>
                             <div className='text-4xl font-black leading-none'>{set.reps}</div>
-                            <div className='text-[9px] uppercase font-bold tracking-widest mt-1 text-gray-400'>Reps</div>
+                            <div className='text-[9px] uppercase font-bold tracking-widest mt-1 opacity-70'>Reps</div>
                           </div>
                         </div>
                       );
@@ -527,21 +529,43 @@
                     {workLoad && sets.length > 0 && (
                       <div className='pt-8'>
                         <div className='flex items-center gap-2 mb-4'>
-                          <span className='bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>Work Set</span>
+                          <span
+                            className={`bg-blue-600 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider`}
+                          >
+                            Work Set
+                          </span>
                           <div className='h-px bg-blue-100 flex-grow'></div>
                         </div>
-                        <div className='flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden relative z-10 bg-white'>
-                          {/* Ícone HASH removido daqui para evitar o glitch */}
-                          <div className='w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-lg shadow-blue-200'>
+
+                        {/* SEM SOMBRAS, BG FLAT PARA EVITAR GLITCH */}
+                        <div
+                          className={`flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 relative overflow-hidden relative z-10`}
+                          style={{ backgroundColor: '#eff6ff' }}
+                        >
+                          <div
+                            className={`w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10`}
+                          >
                             <Dumbbell size={24} />
                           </div>
                           <div className='z-10'>
-                            <div className='text-xs font-bold uppercase tracking-widest text-blue-400 mb-1'>5 Séries de Trabalho</div>
-                            <div className='flex items-baseline gap-2'>
-                              <span className='text-5xl font-black text-black tracking-tighter'>{workLoad}</span>
-                              <span className='text-xl text-gray-400 font-bold'>KG</span>
+                            <div
+                              className={`text-xs font-bold uppercase tracking-widest text-blue-400 mb-1`}
+                            >
+                              5 Séries de Trabalho
                             </div>
-                            <div className='mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100'>5 x 5 Reps</div>
+                            <div className='flex items-baseline gap-2'>
+                              <span className='text-5xl font-black text-black tracking-tighter'>
+                                {workLoad}
+                              </span>
+                              <span className='text-xl text-gray-400 font-bold'>
+                                KG
+                              </span>
+                            </div>
+                            <div
+                              className={`mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 border border-blue-100`}
+                            >
+                              5 x 5 Reps
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -561,8 +585,8 @@
     <script>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
-                // Atualizado para v3.4 para garantir limpeza do cache
-                navigator.serviceWorker.register('./sw.js?v=3.4')
+                // Atualizado para v3.5 para garantir nova instalação
+                navigator.serviceWorker.register('./sw.js?v=3.5')
                     .then(reg => {
                         console.log('SW registrado com sucesso:', reg.scope);
                         reg.update();
