@@ -209,7 +209,10 @@
                 label: 'Peso',
                 data: data,
                 borderColor: '#2563EB',
-                borderWidth: 1,
+                // CORREÇÃO: Aumentado para 2 para melhor cobertura e adicionado borderJoinStyle
+                borderWidth: 2,
+                borderJoinStyle: 'round', 
+                borderCapStyle: 'round',
                 backgroundColor: (context) => {
                   const ctx = context.chart.ctx;
                   const gradient = ctx.createLinearGradient(0, 0, 0, 250);
@@ -221,14 +224,13 @@
                 pointBorderColor: '#2563EB',
                 pointBorderWidth: 2,
                 pointStyle: 'circle',
-                pointRadius: (ctx) => {
-                  const index = ctx.dataIndex;
-                  const count = ctx.dataset.data.length;
-                  return (index === 0 || index === count - 1) ? 2 : 1;
-                },
+                // ALTERADO: Tamanho fixo 2 para todos os pontos (era condicional 2 ou 1)
+                pointRadius: 2,
                 pointHoverRadius: 6,
-                tension: 0.1,
+                // CORREÇÃO: Alterado de 0.1 para 0 para eliminar artefatos de renderização
+                tension: 0,
                 fill: true,
+                spanGaps: true, // Garante que não haja quebras se houver dados faltantes
                 clip: false, 
               }],
             },
