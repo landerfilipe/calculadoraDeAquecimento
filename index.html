@@ -377,104 +377,87 @@
         };
 
         const calculateWarmup = (targetWeight) => {
-          if (!targetWeight || targetWeight < 20) return [];
+          if (!targetWeight || targetWeight < 30) return [];
           
-          const startWeight = 20;
+          const startWeight = 30; // Primeira série sempre 30kg
+          const lastJump = 20;    // Diferença entre última série e work set
+          const maxJump = 40;     // Diferença máxima entre séries de aquecimento
           
-          // Se a carga for igual ao peso da barra
+          // Se a carga for igual ao peso inicial
           if (targetWeight === startWeight) {
              return [{ weight: startWeight, reps: 10, percent: 100 }];
           }
-
-          const mod = targetWeight % 10;
-          let candidates = [];
           
-          if (mod === 0) {
-             candidates = [20, 10]; 
-          } else {
-             if (mod + 10 <= 20) candidates.push(mod + 10);
-             candidates.push(mod);
+          // Se a carga for menor que startWeight + lastJump (não precisa de aquecimento intermediário)
+          if (targetWeight <= startWeight + lastJump) {
+             return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
           }
 
-          // Testamos os candidatos do maior para o menor
-          for (let jump of candidates) {
-              const lastWarmup = targetWeight - jump;
-              
-              if (lastWarmup < startWeight) continue;
-              
-              if (lastWarmup === startWeight) {
-                  return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
-              }
+          // Última série de aquecimento = targetWeight - 20kg (arredondado para CIMA para múltiplo de 10)
+          // Isso garante que a diferença entre última série e work set seja no MÁXIMO 20kg
+          let lastWarmup = targetWeight - lastJump;
+          lastWarmup = Math.ceil(lastWarmup / 10) * 10;
+          
+          // Se a última série é menor ou igual ao peso inicial
+          if (lastWarmup <= startWeight) {
+             return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
+          }
 
-              const dist = lastWarmup - startWeight;
-              
-              const minChunk = Math.ceil(jump / 10) * 10; 
-              const maxChunk = 40; 
-              
-              let stepsCount = Math.ceil(dist / maxChunk);
-
-              // LÓGICA: FORÇA MÍNIMO DE 3 SÉRIES PARA > 60KG
-              if (targetWeight > 60 && stepsCount < 2) {
-                  stepsCount = 2;
-              }
-              
-              const minTotalCapacity = stepsCount * minChunk;
-              
-              if (dist >= minTotalCapacity) {
-                  
-                  let weights = [startWeight];
-                  let currentDist = dist;
-                  let currentSteps = stepsCount;
-                  let currentWeight = startWeight;
-
-                  // Distribuímos a carga restante
-                  for (let i = 0; i < stepsCount; i++) {
-                      let stepVal = Math.floor(currentDist / currentSteps / 10) * 10;
-                      
-                      let remainder = currentDist - (stepVal * currentSteps);
-                      if (remainder > 0) {
-                          stepVal += 10;
-                      }
-                      
-                      currentWeight += stepVal;
-                      weights.push(currentWeight);
-                      
-                      currentDist -= stepVal;
-                      currentSteps--;
-                  }
-                  
-                  // Aplica lógica de repetições CUSTOMIZADA baseada na quantidade total de séries
-                  return weights.map((w, i) => {
-                     let reps = 1;
-                     const totalSets = weights.length;
-
-                     if (i === 0) {
-                         // Primeira série sempre 10
-                         reps = 10;
-                     } else {
-                         // Lógica baseada no total de séries
-                         if (totalSets === 2) {
-                             // Se temos apenas 2 séries: [10, 2]
-                             if (i === 1) reps = 2;
-                         } else if (totalSets === 3) {
-                             // Se temos 3 séries: [10, 5, 2]
-                             if (i === 1) reps = 5;
-                             else if (i === 2) reps = 2;
-                         } else {
-                             // Se temos 4 ou mais séries: [10, 5, 3, 2, 1, 1...]
-                             if (i === 1) reps = 5;
-                             else if (i === 2) reps = 3;
-                             else if (i === 3) reps = 2;
-                             else reps = 1; // 5ª série em diante
-                         }
-                     }
-                     
-                     return { weight: w, reps: reps, percent: Math.round((w / targetWeight) * 100) };
-                  });
+          // Calcular quantas séries intermediárias precisamos
+          const distToDistribute = lastWarmup - startWeight;
+          let stepsCount = Math.ceil(distToDistribute / maxJump);
+          
+          // REGRA: Mínimo de 3 séries para pesos acima de 60kg
+          if (targetWeight > 60) {
+              const minSets = 3;
+              // stepsCount + 1 é o total de séries (inclui a primeira de 30kg)
+              if (stepsCount + 1 < minSets) {
+                  stepsCount = minSets - 1; // Ajusta para ter no mínimo 3 séries
               }
           }
           
-          return [];
+          // Calcular o salto ideal (distribuição uniforme)
+          const idealJump = distToDistribute / stepsCount;
+          
+          // Gerar os pesos com distribuição uniforme (arredondados para múltiplos de 10)
+          let weights = [startWeight];
+          for (let i = 1; i <= stepsCount; i++) {
+              let nextWeight = startWeight + Math.round((idealJump * i) / 10) * 10;
+              // Garantir que o último seja exatamente o lastWarmup
+              if (i === stepsCount) {
+                  nextWeight = lastWarmup;
+              }
+              weights.push(nextWeight);
+          }
+          
+          // Aplica lógica de repetições baseada na quantidade total de séries
+          return weights.map((w, i) => {
+             let reps = 1;
+             const totalSets = weights.length;
+
+             if (i === 0) {
+                 // Primeira série sempre 10
+                 reps = 10;
+             } else {
+                 // Lógica baseada no total de séries
+                 if (totalSets === 2) {
+                     // Se temos apenas 2 séries: [10, 2]
+                     if (i === 1) reps = 2;
+                 } else if (totalSets === 3) {
+                     // Se temos 3 séries: [10, 5, 2]
+                     if (i === 1) reps = 5;
+                     else if (i === 2) reps = 2;
+                 } else {
+                     // Se temos 4 ou mais séries: [10, 5, 3, 2, 1, 1...]
+                     if (i === 1) reps = 5;
+                     else if (i === 2) reps = 3;
+                     else if (i === 3) reps = 2;
+                     else reps = 1; // 5ª série em diante
+                 }
+             }
+             
+             return { weight: w, reps: reps, percent: Math.round((w / targetWeight) * 100) };
+          });
         };
 
         React.useEffect(() => {
