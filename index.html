@@ -146,6 +146,22 @@
           <circle cx='12' cy='12' r='10' /><line x1='12' x2='12' y1='8' y2='12' /><line x1='12' x2='12.01' y1='16' y2='16' />
         </svg>
       );
+      // Ícone BicepsFlexed (Força) - estilo Lucide
+      const BicepsFlexed = ({ className, size = 24 }) => (
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <path d='M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 10 2a3 3 0 0 1 3 3 2 2 0 0 1-2 2c-1.105 0-1.64-.444-2-1' />
+          <path d='M15 14a5 5 0 0 0-7.584 2' />
+          <path d='M9.964 6.825C8.019 7.977 9.5 13 8 15' />
+        </svg>
+      );
+      // Ícone ChartNoAxesColumnIncreasing (Volume) - estilo Lucide - barras crescentes
+      const ChartColumn = ({ className, size = 24 }) => (
+        <svg xmlns='http://www.w3.org/2000/svg' width={size} height={size} viewBox='0 0 24 24' fill='none' stroke='currentColor' strokeWidth='2' strokeLinecap='round' strokeLinejoin='round' className={className}>
+          <line x1='6' x2='6' y1='20' y2='16' />
+          <line x1='12' x2='12' y1='20' y2='10' />
+          <line x1='18' x2='18' y1='20' y2='4' />
+        </svg>
+      );
       
       // --- COMPONENTE DO GRÁFICO ---
       const WarmupChart = ({ sets, workLoad }) => {
@@ -370,89 +386,168 @@
         const [workLoad, setWorkLoad] = React.useState('');
         const [sets, setSets] = React.useState([]);
         const [completed, setCompleted] = React.useState([]);
+        const [trainingMode, setTrainingMode] = React.useState('forca'); // 'forca' ou 'volume'
 
         const handleTransferWarmup = (weight) => {
           setWorkLoad(weight.toString());
           setActiveTab('warmup');
         };
 
-        const calculateWarmup = (targetWeight) => {
+        const calculateWarmup = (targetWeight, mode) => {
           if (!targetWeight || targetWeight < 30) return [];
           
           const startWeight = 30; // Primeira série sempre 30kg
-          const lastJump = 20;    // Diferença entre última série e work set
+          const maxLastJump = 20;    // Diferença MÁXIMA entre última série e work set
           const maxJump = 40;     // Diferença máxima entre séries de aquecimento
+          
+          // Primeira rep baseada no modo
+          const firstReps = mode === 'volume' ? 12 : 10;
           
           // Se a carga for igual ao peso inicial
           if (targetWeight === startWeight) {
-             return [{ weight: startWeight, reps: 10, percent: 100 }];
+             return [{ weight: startWeight, reps: firstReps, percent: 100 }];
           }
           
-          // Se a carga for menor que startWeight + lastJump (não precisa de aquecimento intermediário)
-          if (targetWeight <= startWeight + lastJump) {
-             return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
+          // Se a carga for menor que startWeight + maxLastJump (não precisa de aquecimento intermediário)
+          if (targetWeight <= startWeight + maxLastJump) {
+             return [{ weight: startWeight, reps: firstReps, percent: Math.round((startWeight/targetWeight)*100) }];
           }
 
           // Última série de aquecimento = targetWeight - 20kg (arredondado para CIMA para múltiplo de 10)
           // Isso garante que a diferença entre última série e work set seja no MÁXIMO 20kg
-          let lastWarmup = targetWeight - lastJump;
+          let lastWarmup = targetWeight - maxLastJump;
           lastWarmup = Math.ceil(lastWarmup / 10) * 10;
           
           // Se a última série é menor ou igual ao peso inicial
           if (lastWarmup <= startWeight) {
-             return [{ weight: startWeight, reps: 10, percent: Math.round((startWeight/targetWeight)*100) }];
+             return [{ weight: startWeight, reps: firstReps, percent: Math.round((startWeight/targetWeight)*100) }];
           }
 
           // Calcular quantas séries intermediárias precisamos
           const distToDistribute = lastWarmup - startWeight;
           let stepsCount = Math.ceil(distToDistribute / maxJump);
           
-          // REGRA: Mínimo de 3 séries para pesos acima de 60kg
-          if (targetWeight > 60) {
-              const minSets = 3;
-              // stepsCount + 1 é o total de séries (inclui a primeira de 30kg)
-              if (stepsCount + 1 < minSets) {
-                  stepsCount = minSets - 1; // Ajusta para ter no mínimo 3 séries
-              }
+          // REGRA: Mínimo de séries baseado no peso
+          let minSets = 1;
+          if (targetWeight >= 480) minSets = 10;
+          else if (targetWeight >= 420) minSets = 9;
+          else if (targetWeight >= 360) minSets = 8;
+          else if (targetWeight >= 300) minSets = 7;
+          else if (targetWeight >= 240) minSets = 6;
+          else if (targetWeight >= 180) minSets = 5;
+          else if (targetWeight >= 120) minSets = 4;
+          else if (targetWeight >= 60) minSets = 3;
+          
+          // stepsCount + 1 é o total de séries (inclui a primeira de 30kg)
+          if (stepsCount + 1 < minSets) {
+              stepsCount = minSets - 1; // Ajusta para ter no mínimo o número requerido
           }
           
           // Calcular o salto ideal (distribuição uniforme)
-          const idealJump = distToDistribute / stepsCount;
+          // MAS: última série deve ter o MENOR salto até o work set
           
-          // Gerar os pesos com distribuição uniforme (arredondados para múltiplos de 10)
+          // Gerar os pesos garantindo que última série tenha menor salto
+          // REGRA: Não pode ter pesos repetidos
           let weights = [startWeight];
-          for (let i = 1; i <= stepsCount; i++) {
-              let nextWeight = startWeight + Math.round((idealJump * i) / 10) * 10;
-              // Garantir que o último seja exatamente o lastWarmup
-              if (i === stepsCount) {
-                  nextWeight = lastWarmup;
+          
+          // Calcular o salto final (da última série para o work set) - deve ser o menor
+          const finalJump = targetWeight - lastWarmup;
+          
+          // Se temos séries intermediárias, distribuir o restante
+          if (stepsCount > 1) {
+              // Distância a distribuir entre as séries intermediárias
+              const intermediateDistance = lastWarmup - startWeight;
+              
+              // Criar saltos progressivamente menores
+              // Saltos intermediários maiores no início, menores no final
+              for (let i = 1; i < stepsCount; i++) {
+                  // Fração do progresso (maior no início)
+                  const fraction = i / stepsCount;
+                  let nextWeight = startWeight + Math.round((intermediateDistance * fraction) / 10) * 10;
+                  
+                  // REGRA: Garantir que não haja pesos repetidos
+                  const lastWeight = weights[weights.length - 1];
+                  if (nextWeight <= lastWeight) {
+                      nextWeight = lastWeight + 10;
+                  }
+                  
+                  weights.push(nextWeight);
               }
-              weights.push(nextWeight);
           }
           
-          // Aplica lógica de repetições baseada na quantidade total de séries
+          // Adicionar a última série de aquecimento
+          // Garantir que seja maior que a anterior
+          if (lastWarmup <= weights[weights.length - 1]) {
+              weights.push(weights[weights.length - 1] + 10);
+          } else {
+              weights.push(lastWarmup);
+          }
+          
+          // Verificar se o último salto é realmente o menor
+          // Se não for, ajustar a última série
+          const jumps = [];
+          for (let i = 1; i < weights.length; i++) {
+              jumps.push(weights[i] - weights[i-1]);
+          }
+          jumps.push(targetWeight - weights[weights.length - 1]); // salto final até work set
+          
+          const finalJumpActual = targetWeight - weights[weights.length - 1];
+          const maxIntermediateJump = Math.max(...jumps.slice(0, -1));
+          
+          // Se o salto final não é o menor, ajustar última série para cima
+          if (finalJumpActual >= maxIntermediateJump && maxIntermediateJump > 0) {
+              const newLastWarmup = targetWeight - Math.max(maxIntermediateJump - 2, 8);
+              const roundedNewLast = Math.ceil(newLastWarmup / 10) * 10;
+              if (roundedNewLast > weights[weights.length - 1] && roundedNewLast < targetWeight) {
+                  weights[weights.length - 1] = roundedNewLast;
+              }
+          }
+          
+          // Aplica lógica de repetições baseada no modo e quantidade total de séries
           return weights.map((w, i) => {
              let reps = 1;
              const totalSets = weights.length;
 
-             if (i === 0) {
-                 // Primeira série sempre 10
-                 reps = 10;
+             if (mode === 'volume') {
+                 // Modo Volume: 12, 8, 5, 3, 2, 1...
+                 if (i === 0) reps = 12;
+                 else if (totalSets === 2) {
+                     if (i === 1) reps = 3;
+                 } else if (totalSets === 3) {
+                     if (i === 1) reps = 8;
+                     else if (i === 2) reps = 5;
+                 } else if (totalSets === 4) {
+                     if (i === 1) reps = 8;
+                     else if (i === 2) reps = 5;
+                     else if (i === 3) reps = 2;
+                 } else if (totalSets === 5) {
+                     if (i === 1) reps = 8;
+                     else if (i === 2) reps = 5;
+                     else if (i === 3) reps = 3;
+                     else if (i === 4) reps = 2;
+                 } else {
+                     // 6 ou mais séries: 12, 8, 5, 3, 2, 1...
+                     if (i === 1) reps = 8;
+                     else if (i === 2) reps = 5;
+                     else if (i === 3) reps = 3;
+                     else if (i === 4) reps = 2;
+                     else reps = 1;
+                 }
              } else {
-                 // Lógica baseada no total de séries
-                 if (totalSets === 2) {
-                     // Se temos apenas 2 séries: [10, 2]
+                 // Modo Força: 10, 5, 3, 2, 1...
+                 if (i === 0) {
+                     reps = 10;
+                 } else if (totalSets === 2) {
                      if (i === 1) reps = 2;
                  } else if (totalSets === 3) {
-                     // Se temos 3 séries: [10, 5, 2]
                      if (i === 1) reps = 5;
                      else if (i === 2) reps = 2;
                  } else {
-                     // Se temos 4 ou mais séries: [10, 5, 3, 2, 1, 1...]
+                     // 4 ou mais séries: 10, 5, 3, 2, 1...
                      if (i === 1) reps = 5;
                      else if (i === 2) reps = 3;
                      else if (i === 3) reps = 2;
-                     else reps = 1; // 5ª série em diante
+                     else reps = 1;
                  }
              }
              
@@ -462,12 +557,12 @@
 
         React.useEffect(() => {
           if (workLoad && parseFloat(workLoad) > 0) {
-            const calculated = calculateWarmup(parseFloat(workLoad));
+            const calculated = calculateWarmup(parseFloat(workLoad), trainingMode);
             setSets(calculated);
           } else {
             setSets([]);
           }
-        }, [workLoad]);
+        }, [workLoad, trainingMode]);
 
         const toggleSet = (index) => {
           if (completed.includes(index)) setCompleted(completed.filter((i) => i !== index));
@@ -510,11 +605,35 @@
                     </div>
                   </div>
 
+                  {/* Seletor de Modo */}
                   {sets.length > 0 && <WarmupChart sets={sets} workLoad={workLoad} />}
 
                   <div className='space-y-3 relative'>
                     {sets.length > 0 && (
                       <div className='flex items-center gap-2 mb-4'>
+                        {/* Seletor de Modo - apenas ícones */}
+                        <div className="flex p-1 bg-gray-100 rounded-lg">
+                          <button 
+                            onClick={() => setTrainingMode('forca')} 
+                            className={`p-2 rounded-md transition-all ${
+                              trainingMode === 'forca' 
+                                ? 'bg-white text-black shadow-sm' 
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                          >
+                            <BicepsFlexed size={18} />
+                          </button>
+                          <button 
+                            onClick={() => setTrainingMode('volume')} 
+                            className={`p-2 rounded-md transition-all ${
+                              trainingMode === 'volume' 
+                                ? 'bg-white text-black shadow-sm' 
+                                : 'text-gray-400 hover:text-gray-600'
+                            }`}
+                          >
+                            <ChartColumn size={18} />
+                          </button>
+                        </div>
                         <span className='bg-black text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>Aquecimento</span>
                         <div className='h-px bg-gray-200 flex-grow'></div>
                       </div>
@@ -564,12 +683,16 @@
                             <Dumbbell size={24} />
                           </div>
                           <div className='z-10'>
-                            <div className='text-xs font-bold uppercase tracking-widest text-blue-400 mb-1'>5 Séries de Trabalho</div>
+                            <div className='text-xs font-bold uppercase tracking-widest text-blue-400 mb-1'>
+                              {trainingMode === 'forca' ? '5 Séries de Trabalho' : '4 Séries de Trabalho'}
+                            </div>
                             <div className='flex items-baseline gap-2'>
                               <span className='text-5xl font-black text-black tracking-tighter'>{workLoad}</span>
                               <span className='text-xl text-gray-400 font-bold'>KG</span>
                             </div>
-                            <div className='mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100'>5 x 5 Reps</div>
+                            <div className='mt-2 inline-flex bg-white px-3 py-1 rounded-full text-xs font-bold text-blue-600 shadow-sm border border-blue-100'>
+                              {trainingMode === 'forca' ? '5 x 5 Reps' : '4 x 8 Reps'}
+                            </div>
                           </div>
                         </div>
                       </div>
