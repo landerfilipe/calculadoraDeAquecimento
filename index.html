@@ -443,63 +443,69 @@
               stepsCount = minSets - 1; // Ajusta para ter no mínimo o número requerido
           }
           
-          // Calcular o salto ideal (distribuição uniforme)
-          // MAS: última série deve ter o MENOR salto até o work set
+          // Estratégia: distribuir uniformemente os pesos intermediários
+          // e depois garantir que o último salto (para work set) seja o menor
           
-          // Gerar os pesos garantindo que última série tenha menor salto
-          // REGRA: Não pode ter pesos repetidos
+          // Calcular o espaço total a distribuir (do startWeight até o work set)
+          const totalDistance = targetWeight - startWeight;
+          
+          // Número total de saltos = stepsCount (séries de aquecimento) + 1 (salto final)
+          const totalJumps = stepsCount + 1;
+          
+          // Salto base uniforme
+          const baseJump = totalDistance / totalJumps;
+          
+          // Gerar pesos com saltos uniformes, arredondando para múltiplo de 10
           let weights = [startWeight];
           
-          // Calcular o salto final (da última série para o work set) - deve ser o menor
-          const finalJump = targetWeight - lastWarmup;
-          
-          // Se temos séries intermediárias, distribuir o restante
-          if (stepsCount > 1) {
-              // Distância a distribuir entre as séries intermediárias
-              const intermediateDistance = lastWarmup - startWeight;
+          for (let i = 1; i <= stepsCount; i++) {
+              let nextWeight = startWeight + Math.round((baseJump * i) / 10) * 10;
               
-              // Criar saltos progressivamente menores
-              // Saltos intermediários maiores no início, menores no final
-              for (let i = 1; i < stepsCount; i++) {
-                  // Fração do progresso (maior no início)
-                  const fraction = i / stepsCount;
-                  let nextWeight = startWeight + Math.round((intermediateDistance * fraction) / 10) * 10;
-                  
-                  // REGRA: Garantir que não haja pesos repetidos
-                  const lastWeight = weights[weights.length - 1];
+              // Garantir que não haja pesos repetidos
+              const lastWeight = weights[weights.length - 1];
+              if (nextWeight <= lastWeight) {
+                  nextWeight = lastWeight + 10;
+              }
+              
+              // Garantir que não ultrapasse o work set - 10kg (mínimo de salto final)
+              if (nextWeight >= targetWeight) {
+                  nextWeight = Math.floor((targetWeight - 10) / 10) * 10;
                   if (nextWeight <= lastWeight) {
                       nextWeight = lastWeight + 10;
                   }
-                  
-                  weights.push(nextWeight);
               }
+              
+              weights.push(nextWeight);
           }
           
-          // Adicionar a última série de aquecimento
-          // Garantir que seja maior que a anterior
-          if (lastWarmup <= weights[weights.length - 1]) {
-              weights.push(weights[weights.length - 1] + 10);
-          } else {
-              weights.push(lastWarmup);
-          }
-          
-          // Verificar se o último salto é realmente o menor
-          // Se não for, ajustar a última série
-          const jumps = [];
+          // Calcular os saltos atuais
+          let jumps = [];
           for (let i = 1; i < weights.length; i++) {
               jumps.push(weights[i] - weights[i-1]);
           }
-          jumps.push(targetWeight - weights[weights.length - 1]); // salto final até work set
+          const finalJump = targetWeight - weights[weights.length - 1];
           
-          const finalJumpActual = targetWeight - weights[weights.length - 1];
-          const maxIntermediateJump = Math.max(...jumps.slice(0, -1));
+          // Encontrar o menor salto intermediário
+          const minIntermediateJump = Math.min(...jumps);
           
-          // Se o salto final não é o menor, ajustar última série para cima
-          if (finalJumpActual >= maxIntermediateJump && maxIntermediateJump > 0) {
-              const newLastWarmup = targetWeight - Math.max(maxIntermediateJump - 2, 8);
-              const roundedNewLast = Math.ceil(newLastWarmup / 10) * 10;
-              if (roundedNewLast > weights[weights.length - 1] && roundedNewLast < targetWeight) {
-                  weights[weights.length - 1] = roundedNewLast;
+          // Se o salto final NÃO é menor que todos os saltos intermediários, ajustar
+          if (finalJump >= minIntermediateJump) {
+              // Recalcular: a última série precisa estar mais próxima do work set
+              // O salto final deve ser menor que o menor salto intermediário
+              const targetFinalJump = Math.max(minIntermediateJump - 2, 6);
+              let newLastWarmup = targetWeight - targetFinalJump;
+              newLastWarmup = Math.ceil(newLastWarmup / 10) * 10;
+              
+              // Garantir que a nova última série não seja menor/igual à penúltima
+              if (newLastWarmup > weights[weights.length - 1] && newLastWarmup < targetWeight) {
+                  weights[weights.length - 1] = newLastWarmup;
+              } else if (newLastWarmup <= weights[weights.length - 1]) {
+                  // Se não der pra ajustar, forçar incremento de 10
+                  weights[weights.length - 1] = weights[weights.length - 1] + 10;
+                  // Mas garantir que não ultrapasse o work set
+                  if (weights[weights.length - 1] >= targetWeight) {
+                      weights[weights.length - 1] = Math.floor((targetWeight - 6) / 10) * 10;
+                  }
               }
           }
           
