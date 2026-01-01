@@ -605,27 +605,15 @@
           }
 
           // Calcular o peso da última série de aquecimento
-          // Porcentagem baseada no peso:
-          // >= 300kg: 97.5%
-          // >= 200kg: 95%
-          // >= 150kg: 92.5%
-          // >= 75kg: 90%
-          // > 38kg & < 75kg: 80%
-          // <= 38kg: distribuição uniforme (sem porcentagem fixa)
+          // Para pesos >= 40kg: última série com no máximo 10kg de diferença do work set
+          // Para pesos < 40kg: distribuição uniforme
           let lastWarmup;
-          if (targetWeight > 38) {
-            let lastWarmupPercent;
-            if (targetWeight >= 300) lastWarmupPercent = 0.975;
-            else if (targetWeight >= 200) lastWarmupPercent = 0.95;
-            else if (targetWeight >= 150) lastWarmupPercent = 0.925;
-            else if (targetWeight >= 75) lastWarmupPercent = 0.9;
-            else lastWarmupPercent = 0.8;
-
-            lastWarmup = roundToTen(targetWeight * lastWarmupPercent);
+          if (targetWeight >= 40) {
+            // Última série = peso de trabalho - 10kg
+            lastWarmup = roundToTen(targetWeight - 10);
           } else {
-            // Para pesos <= 38kg, distribuir uniformemente
-            // A última série será calculada pela distribuição uniforme
-            const warmupDistance = targetWeight - startWeight - 10; // deixar 10kg de diferença para o work set
+            // Para pesos < 40kg, distribuir uniformemente
+            const warmupDistance = targetWeight - startWeight - 10;
             lastWarmup = roundToTen(
               startWeight + warmupDistance * ((numSets - 1) / numSets)
             );
