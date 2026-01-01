@@ -566,7 +566,7 @@
           // Determinar peso inicial baseado na carga de trabalho
           let startWeight = 20;
           if (targetWeight >= 200) startWeight = 40;
-          else if (targetWeight >= 100) startWeight = 30;
+          else if (targetWeight >= 75) startWeight = 30;
 
           // Função auxiliar para arredondar para múltiplo de 10
           const roundToTen = (num) => Math.round(num / 10) * 10;
@@ -609,8 +609,8 @@
           // >= 300kg: 97.5%
           // >= 200kg: 95%
           // >= 150kg: 92.5%
-          // >= 100kg: 90%
-          // > 38kg & < 100kg: 80%
+          // >= 75kg: 90%
+          // > 38kg & < 75kg: 80%
           // <= 38kg: distribuição uniforme (sem porcentagem fixa)
           let lastWarmup;
           if (targetWeight > 38) {
@@ -618,7 +618,7 @@
             if (targetWeight >= 300) lastWarmupPercent = 0.975;
             else if (targetWeight >= 200) lastWarmupPercent = 0.95;
             else if (targetWeight >= 150) lastWarmupPercent = 0.925;
-            else if (targetWeight >= 100) lastWarmupPercent = 0.9;
+            else if (targetWeight >= 75) lastWarmupPercent = 0.9;
             else lastWarmupPercent = 0.8;
 
             lastWarmup = roundToTen(targetWeight * lastWarmupPercent);
