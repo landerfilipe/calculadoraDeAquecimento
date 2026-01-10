@@ -225,6 +225,23 @@
           <path d='m12 5 7 7-7 7' />
         </svg>
       );
+      const ArrowUp = ({ className, size = 24 }) => (
+        <svg
+          xmlns='http://www.w3.org/2000/svg'
+          width={size}
+          height={size}
+          viewBox='0 0 24 24'
+          fill='none'
+          stroke='currentColor'
+          strokeWidth='2'
+          strokeLinecap='round'
+          strokeLinejoin='round'
+          className={className}
+        >
+          <path d='M12 19V5' />
+          <path d='m5 12 7-7 7 7' />
+        </svg>
+      );
       const AlertCircle = ({ className, size = 24 }) => (
         <svg
           xmlns='http://www.w3.org/2000/svg'
@@ -563,61 +580,35 @@
         const calculateWarmup = (targetWeight) => {
           if (!targetWeight || targetWeight < 20) return [];
 
-          // Determinar peso inicial baseado na carga de trabalho
-          let startWeight = 20;
-          if (targetWeight >= 200) startWeight = 40;
-          else if (targetWeight >= 75) startWeight = 30;
-
           // Função auxiliar para arredondar para múltiplo de 10
           const roundToTen = (num) => Math.round(num / 10) * 10;
 
-          // Determinar número de séries baseado no peso
-          let numSets = 2;
-          if (targetWeight >= 520) numSets = 14;
-          else if (targetWeight >= 480) numSets = 13;
-          else if (targetWeight >= 440) numSets = 12;
-          else if (targetWeight >= 400) numSets = 11;
-          else if (targetWeight >= 360) numSets = 10;
-          else if (targetWeight >= 320) numSets = 9;
-          else if (targetWeight >= 280) numSets = 8;
-          else if (targetWeight >= 240) numSets = 7;
-          else if (targetWeight >= 200) numSets = 6;
-          else if (targetWeight >= 160) numSets = 5;
-          else if (targetWeight >= 120) numSets = 4;
-          else if (targetWeight >= 80) numSets = 3;
-          else if (targetWeight >= 40) numSets = 2;
-          // < 40kg = 2 séries
+          // Série de pré-aquecimento (sempre 10kg, 10 reps)
+          const preWarmup = {
+            weight: 10,
+            reps: 10,
+            percent: Math.round((10 / targetWeight) * 100),
+            isPreWarmup: true,
+          };
 
-          // Se a carga for igual ou menor ao peso inicial
-          if (targetWeight <= startWeight) {
-            return [{ weight: startWeight, reps: 15, percent: 100 }];
+          // Se o peso de trabalho é muito baixo, retorna apenas pré-aquecimento
+          if (targetWeight <= 20) {
+            return [preWarmup];
           }
 
-          // Se só precisamos de 1 série
-          if (numSets === 1) {
-            return [
-              {
-                weight: startWeight,
-                reps: 15,
-                percent: Math.round((startWeight / targetWeight) * 100),
-              },
-            ];
-          }
+          // Determinar peso inicial baseado na carga de trabalho
+          let startWeight = 30;
+          if (targetWeight > 300) startWeight = 50;
+          else if (targetWeight > 200) startWeight = 40;
 
-          // Calcular o peso da última série de aquecimento
-          // Para pesos >= 40kg: última série com no máximo 10kg de diferença do work set
-          // Para pesos < 40kg: distribuição uniforme
-          let lastWarmup;
-          if (targetWeight >= 40) {
-            // Última série = peso de trabalho - 10kg
-            lastWarmup = roundToTen(targetWeight - 10);
-          } else {
-            // Para pesos < 40kg, distribuir uniformemente
-            const warmupDistance = targetWeight - startWeight - 10;
-            lastWarmup = roundToTen(
-              startWeight + warmupDistance * ((numSets - 1) / numSets)
-            );
-          }
+          // Determinar salto máximo baseado na carga
+          let maxJump = targetWeight <= 150 ? 30 : 40;
+
+          // Último salto antes do work set nunca maior que 10kg
+          const lastJumpMax = 10;
+
+          // Calcular o peso da última série de aquecimento (no máximo 10kg do work set)
+          let lastWarmup = roundToTen(targetWeight - lastJumpMax);
 
           // Garantir que a última série seja menor que o peso de trabalho
           if (lastWarmup >= targetWeight) {
@@ -627,83 +618,138 @@
           // Se a última série é menor ou igual ao peso inicial
           if (lastWarmup <= startWeight) {
             return [
+              preWarmup,
               {
                 weight: startWeight,
-                reps: 15,
+                reps: 10,
                 percent: Math.round((startWeight / targetWeight) * 100),
+                isPreWarmup: false,
               },
             ];
           }
 
-          // Gerar pesos distribuídos uniformemente entre startWeight e lastWarmup
-          let weights = [];
+          // Gerar séries de aquecimento respeitando salto máximo
+          let weights = [startWeight];
 
-          for (let i = 0; i < numSets; i++) {
-            if (i === 0) {
-              weights.push(startWeight);
-            } else if (i === numSets - 1) {
-              weights.push(lastWarmup);
-            } else {
-              // Distribuir uniformemente entre startWeight e lastWarmup
-              const fraction = i / (numSets - 1);
-              const warmupDistance = lastWarmup - startWeight;
-              let nextWeight = roundToTen(
-                startWeight + warmupDistance * fraction
-              );
+          while (true) {
+            const currentWeight = weights[weights.length - 1];
+            const distanceToLast = lastWarmup - currentWeight;
 
-              // Garantir que não haja pesos repetidos e seja crescente
-              const prevWeight = weights[weights.length - 1];
-              if (nextWeight <= prevWeight) {
-                nextWeight = prevWeight + 10;
-              }
-
-              weights.push(nextWeight);
+            // Se já estamos próximos o suficiente ou chegamos na última
+            if (distanceToLast <= 0) {
+              break;
             }
+
+            // Se o próximo salto nos levaria além ou igual ao último
+            if (distanceToLast <= maxJump) {
+              if (currentWeight !== lastWarmup) {
+                weights.push(lastWarmup);
+              }
+              break;
+            }
+
+            // Adicionar próximo peso com salto máximo permitido
+            const nextWeight = roundToTen(currentWeight + maxJump);
+            if (nextWeight >= lastWarmup) {
+              if (currentWeight !== lastWarmup) {
+                weights.push(lastWarmup);
+              }
+              break;
+            }
+            weights.push(nextWeight);
+          }
+
+          // Garantir que o último peso está na lista
+          if (
+            weights[weights.length - 1] !== lastWarmup &&
+            lastWarmup > weights[weights.length - 1]
+          ) {
+            weights.push(lastWarmup);
           }
 
           // Garantir sequência crescente e sem repetições
+          weights = [...new Set(weights)].sort((a, b) => a - b);
+
+          // Refinar: garantir que nenhum salto exceda o máximo e o último salto não exceda 10kg
+          let refinedWeights = [weights[0]];
           for (let i = 1; i < weights.length; i++) {
-            if (weights[i] <= weights[i - 1]) {
-              weights[i] = weights[i - 1] + 10;
+            const jump = weights[i] - refinedWeights[refinedWeights.length - 1];
+            if (jump > maxJump) {
+              // Adicionar pesos intermediários
+              let current = refinedWeights[refinedWeights.length - 1];
+              while (current + maxJump < weights[i]) {
+                current = roundToTen(current + maxJump);
+                refinedWeights.push(current);
+              }
+            }
+            refinedWeights.push(weights[i]);
+          }
+          weights = [...new Set(refinedWeights)].sort((a, b) => a - b);
+
+          // Verificar se o último salto para o work set excede 10kg
+          const lastWeight = weights[weights.length - 1];
+          const jumpToWork = targetWeight - lastWeight;
+          if (
+            jumpToWork > lastJumpMax &&
+            lastWeight < targetWeight - lastJumpMax
+          ) {
+            // Adicionar série intermediária
+            const intermediateWeight = roundToTen(targetWeight - lastJumpMax);
+            if (intermediateWeight > lastWeight) {
+              weights.push(intermediateWeight);
             }
           }
 
-          // Garantir que a última série não ultrapasse o peso de trabalho
-          if (weights[weights.length - 1] >= targetWeight) {
-            weights[weights.length - 1] = roundToTen(targetWeight - 10);
+          // Limpar duplicatas e ordenar
+          weights = [...new Set(weights)].sort((a, b) => a - b);
+
+          // Para pesos > 150kg, garantir mínimo de 5 séries de aquecimento
+          if (targetWeight > 150) {
+            const minSets = 5;
+            while (weights.length < minSets) {
+              // Encontrar o maior gap entre séries consecutivas
+              let maxGapIndex = 0;
+              let maxGap = 0;
+              for (let i = 0; i < weights.length - 1; i++) {
+                const gap = weights[i + 1] - weights[i];
+                if (gap > maxGap) {
+                  maxGap = gap;
+                  maxGapIndex = i;
+                }
+              }
+              // Inserir peso intermediário no maior gap
+              if (maxGap >= 20) {
+                const newWeight = roundToTen(
+                  (weights[maxGapIndex] + weights[maxGapIndex + 1]) / 2
+                );
+                weights.splice(maxGapIndex + 1, 0, newWeight);
+                weights = [...new Set(weights)].sort((a, b) => a - b);
+              } else {
+                break; // Não há mais espaço para adicionar séries
+              }
+            }
           }
 
-          // Aplica lógica de repetições unificada: 15, 8, 5, 3, 2, 1...
-          return weights.map((w, i) => {
-            let reps = 1;
+          // Aplica lógica de repetições baseada no total de séries
+          // 1 série: 10 | 2 séries: 10,2 | 3 séries: 10,5,2 | 4 séries: 10,5,3,2 | 5+: 10,5,3,2,1...
+          const warmupSets = weights.map((w, i) => {
             const totalSets = weights.length;
+            let reps = 1;
 
-            // Esquema unificado de repetições
-            if (i === 0) reps = 15;
-            else if (totalSets === 2) {
-              // 2 séries: 15, 2
-              if (i === 1) reps = 2;
+            if (totalSets === 1) {
+              reps = 10;
+            } else if (totalSets === 2) {
+              reps = i === 0 ? 10 : 2;
             } else if (totalSets === 3) {
-              // 3 séries: 15, 5, 2
-              if (i === 1) reps = 5;
-              else if (i === 2) reps = 2;
+              reps = [10, 5, 2][i];
             } else if (totalSets === 4) {
-              // 4 séries: 15, 5, 3, 2
-              if (i === 1) reps = 5;
+              reps = [10, 5, 3, 2][i];
+            } else {
+              // 5 ou mais séries: 10, 5, 3, 2, 1...
+              if (i === 0) reps = 10;
+              else if (i === 1) reps = 5;
               else if (i === 2) reps = 3;
               else if (i === 3) reps = 2;
-            } else if (totalSets === 5) {
-              // 5 séries: 15, 8, 5, 3, 2
-              if (i === 1) reps = 8;
-              else if (i === 2) reps = 5;
-              else if (i === 3) reps = 3;
-              else if (i === 4) reps = 2;
-            } else {
-              // 6 ou mais séries: 15, 8, 5, 3, 2, 1...
-              if (i === 1) reps = 8;
-              else if (i === 2) reps = 5;
-              else if (i === 3) reps = 3;
-              else if (i === 4) reps = 2;
               else reps = 1;
             }
 
@@ -711,8 +757,12 @@
               weight: w,
               reps: reps,
               percent: Math.round((w / targetWeight) * 100),
+              isPreWarmup: false,
             };
           });
+
+          // Retornar pré-aquecimento + séries de aquecimento
+          return [preWarmup, ...warmupSets];
         };
 
         React.useEffect(() => {
@@ -796,10 +846,10 @@
                   )}
 
                   <div className='space-y-3 relative'>
-                    {sets.length > 0 && (
+                    {sets.filter((s) => s.isPreWarmup).length > 0 && (
                       <div className='flex items-center gap-2 mb-4'>
-                        <span className='bg-black text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>
-                          Aquecimento
+                        <span className='bg-gray-500 text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>
+                          Pré-aquecimento
                         </span>
                         <div className='h-px bg-gray-200 flex-grow'></div>
                       </div>
@@ -818,69 +868,85 @@
                         index === 0 ? 0 : sets[index - 1].weight;
                       const jump = index === 0 ? 0 : set.weight - prevWeight;
 
+                      // Verificar se deve mostrar etiqueta de aquecimento
+                      const isFirstWarmup =
+                        !set.isPreWarmup &&
+                        (index === 0 || sets[index - 1].isPreWarmup);
+
                       return (
-                        <div
-                          key={index}
-                          onClick={() => toggleSet(index)}
-                          className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${
-                            isDone
-                              ? 'opacity-30 grayscale blur-[0.5px]'
-                              : 'opacity-100'
-                          } ${
-                            isNext
-                              ? 'bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50'
-                              : 'bg-white border border-gray-100 hover:border-gray-300'
-                          }`}
-                          style={{ backgroundColor: isNext ? '#000' : '#fff' }}
-                        >
-                          <div
-                            className={`flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all ${
-                              isNext ? 'border-white' : 'border-current'
-                            }`}
-                          >
-                            {isDone ? (
-                              <Check size={24} />
-                            ) : (
-                              <span className='text-lg font-bold'>
-                                {index + 1}
+                        <React.Fragment key={index}>
+                          {isFirstWarmup && (
+                            <div className='flex items-center gap-2 mb-4 mt-6'>
+                              <span className='bg-black text-white text-[10px] font-bold px-2 py-1 rounded uppercase tracking-wider'>
+                                Aquecimento
                               </span>
-                            )}
-                          </div>
-                          <div className='flex-grow flex flex-col justify-center'>
-                            <div className='flex items-baseline gap-2'>
-                              <span className='text-4xl font-black tracking-tight leading-none'>
-                                {set.weight}
-                              </span>
-                              <span className='text-xs font-bold uppercase tracking-wider opacity-70'>
-                                kg
-                              </span>
+                              <div className='h-px bg-gray-200 flex-grow'></div>
                             </div>
-                            <div className='flex items-center gap-3 mt-1'>
-                              {index > 0 && (
-                                <span
-                                  className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded ${
-                                    isNext
-                                      ? 'bg-white/20'
-                                      : 'bg-gray-100 text-gray-500'
-                                  }`}
-                                >
-                                  <ArrowRight size={10} /> +{jump}kg
+                          )}
+                          <div
+                            onClick={() => toggleSet(index)}
+                            className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${
+                              isDone
+                                ? 'opacity-30 grayscale blur-[0.5px]'
+                                : 'opacity-100'
+                            } ${
+                              isNext
+                                ? 'bg-black text-white shadow-xl scale-[1.02] translate-x-1 ring-4 ring-blue-50'
+                                : 'bg-white border border-gray-100 hover:border-gray-300'
+                            }`}
+                            style={{
+                              backgroundColor: isNext ? '#000' : '#fff',
+                            }}
+                          >
+                            <div
+                              className={`flex-shrink-0 w-14 h-14 rounded-full border-2 flex items-center justify-center transition-all ${
+                                isNext ? 'border-white' : 'border-current'
+                              }`}
+                            >
+                              {isDone ? (
+                                <Check size={24} />
+                              ) : (
+                                <span className='text-lg font-bold'>
+                                  {set.isPreWarmup ? 'P' : index}
                                 </span>
                               )}
-                              <span className='text-[10px] font-bold opacity-70'>
-                                {set.percent}%
-                              </span>
+                            </div>
+                            <div className='flex-grow flex flex-col justify-center'>
+                              <div className='flex items-baseline gap-2'>
+                                <span className='text-4xl font-black tracking-tight leading-none'>
+                                  {set.weight}
+                                </span>
+                                <span className='text-xs font-bold uppercase tracking-wider opacity-70'>
+                                  kg
+                                </span>
+                              </div>
+                              <div className='flex items-center gap-3 mt-1'>
+                                {index > 0 && !set.isPreWarmup && (
+                                  <span
+                                    className={`text-[10px] font-bold flex items-center gap-1 px-1.5 py-0.5 rounded ${
+                                      isNext
+                                        ? 'bg-white/20'
+                                        : 'bg-gray-100 text-gray-500'
+                                    }`}
+                                  >
+                                    <ArrowRight size={10} /> +{jump}kg
+                                  </span>
+                                )}
+                                <span className='text-[10px] font-bold opacity-70'>
+                                  {set.percent}%
+                                </span>
+                              </div>
+                            </div>
+                            <div className='text-right min-w-[60px]'>
+                              <div className='text-4xl font-black leading-none'>
+                                {set.reps}
+                              </div>
+                              <div className='text-[9px] uppercase font-bold tracking-widest mt-1 opacity-70'>
+                                Reps
+                              </div>
                             </div>
                           </div>
-                          <div className='text-right min-w-[60px]'>
-                            <div className='text-4xl font-black leading-none'>
-                              {set.reps}
-                            </div>
-                            <div className='text-[9px] uppercase font-bold tracking-widest mt-1 opacity-70'>
-                              Reps
-                            </div>
-                          </div>
-                        </div>
+                        </React.Fragment>
                       );
                     })}
 
