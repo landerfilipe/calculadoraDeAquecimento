@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
@@ -319,7 +319,7 @@
           ];
 
           const labels = chartDataSets.map((_, i) =>
-            i === chartDataSets.length - 1 ? 'Work' : `Série ${i + 1}`
+            i === chartDataSets.length - 1 ? 'Work' : `Série ${i + 1}`,
           );
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
@@ -578,191 +578,60 @@
         };
 
         const calculateWarmup = (targetWeight) => {
-          if (!targetWeight || targetWeight < 20) return [];
+          if (!targetWeight || targetWeight < 40) return [];
 
           // Função auxiliar para arredondar para múltiplo de 10
           const roundToTen = (num) => Math.round(num / 10) * 10;
 
-          // Série de pré-aquecimento (sempre 10kg, 10 reps)
-          const preWarmup = {
-            weight: 10,
-            reps: 10,
-            percent: Math.round((10 / targetWeight) * 100),
-            isPreWarmup: true,
+          // Determinar número de séries baseado no peso (cada 40kg = +1 série)
+          // 40kg+ = 1, 80kg+ = 2, 120kg+ = 3... até 400kg = 10
+          const numSets = Math.min(10, Math.floor(targetWeight / 40));
+
+          if (numSets === 0) return [];
+
+          // Porcentagens por número de séries
+          const percentagesBySetCount = {
+            1: [50],
+            2: [33, 67],
+            3: [25, 50, 75],
+            4: [20, 40, 60, 80],
+            5: [17, 33, 50, 67, 83],
+            6: [15, 30, 45, 60, 75, 90],
+            7: [12, 25, 37, 50, 62, 75, 87],
+            8: [11, 22, 33, 44, 55, 66, 77, 88],
+            9: [10, 20, 30, 40, 50, 60, 70, 80, 90],
+            10: [9, 18, 27, 36, 45, 54, 63, 72, 81, 90],
           };
 
-          // Se o peso de trabalho é muito baixo, retorna apenas pré-aquecimento
-          if (targetWeight <= 20) {
-            return [preWarmup];
-          }
+          // Repetições por número de séries
+          // 1: 10 | 2: 10,10 | 3: 10,10,5 | 4: 10,10,5,3 | 5: 10,10,5,3,2 | 6+: 10,10,5,3,2,1...
+          const getRepsByPosition = (position, totalSets) => {
+            if (totalSets === 1) return 10;
+            if (totalSets === 2) return 10; // Ambas são 10
+            if (position === 0) return 10;
+            if (position === 1) return 10;
+            if (position === 2) return 5;
+            if (position === 3) return 3;
+            if (position === 4) return 2;
+            return 1; // A partir da 6ª série é sempre 1
+          };
 
-          // Determinar peso inicial baseado na carga de trabalho
-          let startWeight = 30;
-          if (targetWeight > 300) startWeight = 50;
-          else if (targetWeight > 200) startWeight = 40;
+          const percentages = percentagesBySetCount[numSets];
 
-          // Determinar salto máximo baseado na carga
-          let maxJump = targetWeight <= 150 ? 30 : 40;
-
-          // Último salto antes do work set nunca maior que 10kg
-          const lastJumpMax = 10;
-
-          // Calcular o peso da última série de aquecimento (no máximo 10kg do work set)
-          let lastWarmup = roundToTen(targetWeight - lastJumpMax);
-
-          // Garantir que a última série seja menor que o peso de trabalho
-          if (lastWarmup >= targetWeight) {
-            lastWarmup = roundToTen(targetWeight - 10);
-          }
-
-          // Se a última série é menor ou igual ao peso inicial
-          if (lastWarmup <= startWeight) {
-            return [
-              preWarmup,
-              {
-                weight: startWeight,
-                reps: 10,
-                percent: Math.round((startWeight / targetWeight) * 100),
-                isPreWarmup: false,
-              },
-            ];
-          }
-
-          // Gerar séries de aquecimento respeitando salto máximo
-          let weights = [startWeight];
-
-          while (true) {
-            const currentWeight = weights[weights.length - 1];
-            const distanceToLast = lastWarmup - currentWeight;
-
-            // Se já estamos próximos o suficiente ou chegamos na última
-            if (distanceToLast <= 0) {
-              break;
-            }
-
-            // Se o próximo salto nos levaria além ou igual ao último
-            if (distanceToLast <= maxJump) {
-              if (currentWeight !== lastWarmup) {
-                weights.push(lastWarmup);
-              }
-              break;
-            }
-
-            // Adicionar próximo peso com salto máximo permitido
-            const nextWeight = roundToTen(currentWeight + maxJump);
-            if (nextWeight >= lastWarmup) {
-              if (currentWeight !== lastWarmup) {
-                weights.push(lastWarmup);
-              }
-              break;
-            }
-            weights.push(nextWeight);
-          }
-
-          // Garantir que o último peso está na lista
-          if (
-            weights[weights.length - 1] !== lastWarmup &&
-            lastWarmup > weights[weights.length - 1]
-          ) {
-            weights.push(lastWarmup);
-          }
-
-          // Garantir sequência crescente e sem repetições
-          weights = [...new Set(weights)].sort((a, b) => a - b);
-
-          // Refinar: garantir que nenhum salto exceda o máximo e o último salto não exceda 10kg
-          let refinedWeights = [weights[0]];
-          for (let i = 1; i < weights.length; i++) {
-            const jump = weights[i] - refinedWeights[refinedWeights.length - 1];
-            if (jump > maxJump) {
-              // Adicionar pesos intermediários
-              let current = refinedWeights[refinedWeights.length - 1];
-              while (current + maxJump < weights[i]) {
-                current = roundToTen(current + maxJump);
-                refinedWeights.push(current);
-              }
-            }
-            refinedWeights.push(weights[i]);
-          }
-          weights = [...new Set(refinedWeights)].sort((a, b) => a - b);
-
-          // Verificar se o último salto para o work set excede 10kg
-          const lastWeight = weights[weights.length - 1];
-          const jumpToWork = targetWeight - lastWeight;
-          if (
-            jumpToWork > lastJumpMax &&
-            lastWeight < targetWeight - lastJumpMax
-          ) {
-            // Adicionar série intermediária
-            const intermediateWeight = roundToTen(targetWeight - lastJumpMax);
-            if (intermediateWeight > lastWeight) {
-              weights.push(intermediateWeight);
-            }
-          }
-
-          // Limpar duplicatas e ordenar
-          weights = [...new Set(weights)].sort((a, b) => a - b);
-
-          // Para pesos > 150kg, garantir mínimo de 5 séries de aquecimento
-          if (targetWeight > 150) {
-            const minSets = 5;
-            while (weights.length < minSets) {
-              // Encontrar o maior gap entre séries consecutivas
-              let maxGapIndex = 0;
-              let maxGap = 0;
-              for (let i = 0; i < weights.length - 1; i++) {
-                const gap = weights[i + 1] - weights[i];
-                if (gap > maxGap) {
-                  maxGap = gap;
-                  maxGapIndex = i;
-                }
-              }
-              // Inserir peso intermediário no maior gap
-              if (maxGap >= 20) {
-                const newWeight = roundToTen(
-                  (weights[maxGapIndex] + weights[maxGapIndex + 1]) / 2
-                );
-                weights.splice(maxGapIndex + 1, 0, newWeight);
-                weights = [...new Set(weights)].sort((a, b) => a - b);
-              } else {
-                break; // Não há mais espaço para adicionar séries
-              }
-            }
-          }
-
-          // Aplica lógica de repetições baseada no total de séries
-          // 1 série: 10 | 2 séries: 10,2 | 3 séries: 10,5,2 | 4 séries: 10,5,3,2 | 5+: 10,5,3,2,1...
-          const warmupSets = weights.map((w, i) => {
-            const totalSets = weights.length;
-            let reps = 1;
-
-            if (totalSets === 1) {
-              reps = 10;
-            } else if (totalSets === 2) {
-              reps = i === 0 ? 10 : 2;
-            } else if (totalSets === 3) {
-              reps = [10, 5, 2][i];
-            } else if (totalSets === 4) {
-              reps = [10, 5, 3, 2][i];
-            } else {
-              // 5 ou mais séries: 10, 5, 3, 2, 1...
-              if (i === 0) reps = 10;
-              else if (i === 1) reps = 5;
-              else if (i === 2) reps = 3;
-              else if (i === 3) reps = 2;
-              else reps = 1;
-            }
+          // Gerar séries de aquecimento
+          const warmupSets = percentages.map((percent, i) => {
+            const rawWeight = targetWeight * (percent / 100);
+            const weight = roundToTen(rawWeight);
 
             return {
-              weight: w,
-              reps: reps,
-              percent: Math.round((w / targetWeight) * 100),
+              weight: weight,
+              reps: getRepsByPosition(i, numSets),
+              percent: percent,
               isPreWarmup: false,
             };
           });
 
-          // Retornar pré-aquecimento + séries de aquecimento
-          return [preWarmup, ...warmupSets];
+          return warmupSets;
         };
 
         React.useEffect(() => {
@@ -907,7 +776,7 @@
                                 <Check size={24} />
                               ) : (
                                 <span className='text-lg font-bold'>
-                                  {set.isPreWarmup ? 'P' : index}
+                                  {set.isPreWarmup ? 'P' : index + 1}
                                 </span>
                               )}
                             </div>
