@@ -604,19 +604,24 @@
           };
 
           // Repetições por número de séries
-          // 1: 10 | 2: 10,10 | 3: 10,10,5 | 4: 10,10,5,3 | 5: 10,10,5,3,2 | 6+: 10,10,5,3,2,1...
-          const getRepsByPosition = (position, totalSets) => {
-            if (totalSets === 1) return 10;
-            if (totalSets === 2) return 10; // Ambas são 10
+          // 1: 10 | 2: 10,5 | 3: 10,5,3 | 4: 10,5,3,2 | 5+: 10,5,3,2,1...
+          const getRepsByPosition = (position) => {
             if (position === 0) return 10;
-            if (position === 1) return 10;
-            if (position === 2) return 5;
-            if (position === 3) return 3;
-            if (position === 4) return 2;
-            return 1; // A partir da 6ª série é sempre 1
+            if (position === 1) return 5;
+            if (position === 2) return 3;
+            if (position === 3) return 2;
+            return 1; // A partir da 5ª série é sempre 1
           };
 
           const percentages = percentagesBySetCount[numSets];
+
+          // Série 0 (pré-aquecimento): sempre 15 reps com 10kg fixo
+          const preWarmupSet = {
+            weight: 10,
+            reps: 15,
+            percent: 0,
+            isPreWarmup: true,
+          };
 
           // Gerar séries de aquecimento
           const warmupSets = percentages.map((percent, i) => {
@@ -625,13 +630,13 @@
 
             return {
               weight: weight,
-              reps: getRepsByPosition(i, numSets),
+              reps: getRepsByPosition(i),
               percent: percent,
               isPreWarmup: false,
             };
           });
 
-          return warmupSets;
+          return [preWarmupSet, ...warmupSets];
         };
 
         React.useEffect(() => {
