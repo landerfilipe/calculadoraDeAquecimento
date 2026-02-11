@@ -604,15 +604,15 @@
             10: [9, 18, 27, 36, 45, 54, 63, 72, 81, 90],
           };
 
-          // Repetições por número de séries
-          // 1: 10 | 2: 10,8 | 3: 10,8,6 | 4: 10,8,6,4 | 5: 10,8,6,4,2 | 6+: 10,8,6,4,2,1...
+          // Repetições por número de séries (sem contar pré-aquecimento)
+          // 1: 10 | 2: 10,5 | 3: 10,5,3 | 4: 10,5,3,2 | 5+: 10,5,3,2,1...
+          // Total com pré-aquecimento: 10(fixo),10,5,3,2,1...
           const getRepsByPosition = (position) => {
             if (position === 0) return 10;
-            if (position === 1) return 8;
-            if (position === 2) return 6;
-            if (position === 3) return 4;
-            if (position === 4) return 2;
-            return 1; // A partir da 6ª série é sempre 1
+            if (position === 1) return 5;
+            if (position === 2) return 3;
+            if (position === 3) return 2;
+            return 1; // A partir da 5ª série é sempre 1
           };
 
           const percentages = percentagesBySetCount[numSets];
