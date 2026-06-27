@@ -26,6 +26,23 @@
     <link rel="apple-touch-icon" href="icon-192.png" />
 
     <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          fontWeight: {
+            thin: '100',
+            extralight: '200',
+            light: '300',
+            normal: '500',
+            medium: '600',
+            semibold: '700',
+            bold: '800',
+            extrabold: '900',
+            black: '900',
+          },
+        },
+      };
+    </script>
 
     <script
       src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
@@ -69,6 +86,7 @@
 
       body {
         font-family: 'Outfit', sans-serif;
+        font-weight: 500;
         overscroll-behavior: none; /* Redundância de segurança */
         overflow-x: hidden;
         /* Padding para Safe Areas (Notch/Barra inferior) */

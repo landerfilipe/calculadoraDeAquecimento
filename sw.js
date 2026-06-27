@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v4.2'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
+const CACHE_NAME = 'sheiko-app-v4.3'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
 
 // App shell local (essencial): se algum falhar, a instalação deve falhar.
 const CORE_ASSETS = [
@@ -93,11 +93,15 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Cache first para o resto
+  // Cache first para o resto — ao buscar da rede, salva no cache para a próxima vez
   event.respondWith(
     caches.match(request).then((response) => {
       if (response) return response;
-      return fetch(request).catch(() => {
+      return fetch(request).then((networkResponse) => {
+        const copy = networkResponse.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(request, copy));
+        return networkResponse;
+      }).catch(() => {
         console.log('Falha ao buscar recurso e sem cache:', request.url);
       });
     })
