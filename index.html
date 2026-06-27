@@ -74,7 +74,6 @@
 
       body {
         font-family: 'Outfit', sans-serif;
-        -webkit-text-stroke: 0.5px currentColor;
         overscroll-behavior: none; /* Redundância de segurança */
         overflow-x: hidden;
         /* Padding para Safe Areas (Notch/Barra inferior) */
@@ -115,6 +114,13 @@
         -webkit-backface-visibility: hidden;
         backface-visibility: hidden;
         perspective: 1000px;
+      }
+
+      /* Compensa renderização mais fina do Skia no Android */
+      @media (hover: none) and (pointer: coarse) {
+        body {
+          -webkit-text-stroke: 0.5px currentColor;
+        }
       }
 
       /* ANIMAÇÕES PERSONALIZADAS SOLICITADAS */
