@@ -27,8 +27,16 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
 
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"
+      integrity="sha384-9nhczxUqK87bcKHh20fSQcTGD4qq5GhayNYSYWqwBkINBhOfQLg/P5HG5lF1urn4"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"
+      integrity="sha384-y49Zu59jZHJL/PLKgZPv3k2WI9c0Yp3pWB76V8OBVCb0QBKS8l4Ff3YslzHVX76Y"
+      crossorigin="anonymous"
+    ></script>
 
     <link
       href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap"
@@ -36,12 +44,14 @@
     />
 
     <script
-      crossorigin
-      src="https://unpkg.com/react@18/umd/react.production.min.js"
+      crossorigin="anonymous"
+      src="https://unpkg.com/react@18.3.1/umd/react.production.min.js"
+      integrity="sha384-DGyLxAyjq0f9SPpVevD6IgztCFlnMF6oW/XQGmfe+IsZ8TqEiDrcHkMLKI6fiB/Z"
     ></script>
     <script
-      crossorigin
-      src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"
+      crossorigin="anonymous"
+      src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js"
+      integrity="sha384-gTGxhz21lVGYNMcdJOyq01Edg0jhn/c22nsx0kyqP0TxaV5WVdsSH1fSDUf5YJj1"
     ></script>
 
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -68,6 +78,12 @@
         -webkit-font-smoothing: antialiased;
         margin: 0;
         height: 100%;
+      }
+
+      /* Dígitos de largura fixa: alinhamento estável tipo visor de calculadora */
+      .tnum {
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: 'tnum';
       }
 
       input::-webkit-outer-spin-button,
@@ -225,23 +241,6 @@
           <path d='m12 5 7 7-7 7' />
         </svg>
       );
-      const ArrowUp = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <path d='M12 19V5' />
-          <path d='m5 12 7-7 7 7' />
-        </svg>
-      );
       const AlertCircle = ({ className, size = 24 }) => (
         <svg
           xmlns='http://www.w3.org/2000/svg'
@@ -258,44 +257,6 @@
           <circle cx='12' cy='12' r='10' />
           <line x1='12' x2='12' y1='8' y2='12' />
           <line x1='12' x2='12.01' y1='16' y2='16' />
-        </svg>
-      );
-      // Ícone BicepsFlexed (Força) - estilo Lucide
-      const BicepsFlexed = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <path d='M12.409 13.017A5 5 0 0 1 22 15c0 3.866-4 7-9 7-4.077 0-8.153-.82-10.371-2.462-.426-.316-.631-.832-.62-1.362C2.118 12.723 2.627 2 10 2a3 3 0 0 1 3 3 2 2 0 0 1-2 2c-1.105 0-1.64-.444-2-1' />
-          <path d='M15 14a5 5 0 0 0-7.584 2' />
-          <path d='M9.964 6.825C8.019 7.977 9.5 13 8 15' />
-        </svg>
-      );
-      // Ícone ChartNoAxesColumnIncreasing (Volume) - estilo Lucide - barras crescentes
-      const ChartColumn = ({ className, size = 24 }) => (
-        <svg
-          xmlns='http://www.w3.org/2000/svg'
-          width={size}
-          height={size}
-          viewBox='0 0 24 24'
-          fill='none'
-          stroke='currentColor'
-          strokeWidth='2'
-          strokeLinecap='round'
-          strokeLinejoin='round'
-          className={className}
-        >
-          <line x1='6' x2='6' y1='20' y2='16' />
-          <line x1='12' x2='12' y1='20' y2='10' />
-          <line x1='18' x2='18' y1='20' y2='4' />
         </svg>
       );
 
@@ -324,8 +285,13 @@
           const data = chartDataSets.map((s) => s.weight);
           const percentages = chartDataSets.map((s) => s.percent + '%');
 
-          const minWeight = Math.min(...data);
-          const maxWeight = Math.max(...data);
+          let minWeight = Math.min(...data);
+          let maxWeight = Math.max(...data);
+          // Evita escala Y degenerada quando todos os pesos são iguais
+          if (minWeight === maxWeight) {
+            minWeight -= 10;
+            maxWeight += 10;
+          }
 
           const customDrawPlugin = {
             id: 'customDrawPlugin',
@@ -482,9 +448,9 @@
       };
 
       // --- COMPONENTE: CALCULADORA 1RM ---
-      const OneRepMaxCalc = ({ onCalculateWarmup }) => {
-        const [oneRepMax, setOneRepMax] = React.useState('');
-
+      // Estado `oneRepMax` é controlado pelo pai (SheikoApp) para sobreviver à
+      // troca de abas e ser persistido no localStorage.
+      const OneRepMaxCalc = ({ onCalculateWarmup, oneRepMax, setOneRepMax }) => {
         const calculatePercentage = (percent) => {
           if (!oneRepMax) return 0;
           const rawWeight = parseFloat(oneRepMax) * (percent / 100);
@@ -492,11 +458,11 @@
         };
 
         const repRanges = [
-          { reps: '2-3', percent: 85 },
-          { reps: '4-6', percent: 80 },
-          { reps: '7-9', percent: 75 },
-          { reps: '10-12', percent: 70 },
-          { reps: '13-15', percent: 65 },
+          { reps: '2-3', percent: 90 },
+          { reps: '4-6', percent: 85 },
+          { reps: '7-9', percent: 80 },
+          { reps: '10-12', percent: 75 },
+          { reps: '13-15', percent: 70 },
         ];
 
         return (
@@ -509,10 +475,16 @@
                 <input
                   type='number'
                   value={oneRepMax}
-                  onChange={(e) => setOneRepMax(e.target.value)}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // Ignora valores negativos
+                    if (v === '' || parseFloat(v) >= 0) setOneRepMax(v);
+                  }}
                   placeholder='0'
-                  className='w-full text-6xl font-black border-b-4 border-gray-200 py-4 focus:outline-none focus:border-black transition-colors bg-transparent placeholder-gray-200'
+                  className='tnum w-full text-6xl font-black border-b-4 border-gray-200 py-4 focus:outline-none focus:border-black transition-colors bg-transparent placeholder-gray-200'
                   step='any'
+                  min='0'
+                  inputMode='decimal'
                 />
                 <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>
                   KG
@@ -532,7 +504,7 @@
                     >
                       <div>
                         <div className='flex items-baseline gap-2'>
-                          <span className='text-3xl font-black text-gray-800'>
+                          <span className='tnum text-3xl font-black text-gray-800'>
                             {weight}
                           </span>
                           <span className='text-sm font-bold text-gray-400'>
@@ -553,6 +525,7 @@
                           // 2. Executa a troca de tela
                           onCalculateWarmup(weight);
                         }}
+                        aria-label={`Usar ${weight}kg como carga de aquecimento`}
                         className='bg-black text-white p-3 rounded-lg hover:bg-gray-800 transition-colors shadow-sm active:scale-95'
                       >
                         <ArrowRight size={20} />
@@ -569,9 +542,32 @@
       // --- APLICATIVO SHEIKO ---
       const SheikoApp = () => {
         const [activeTab, setActiveTab] = React.useState('1rm');
-        const [workLoad, setWorkLoad] = React.useState('');
+        // Estados persistidos no localStorage (init preguiçoso a partir do disco).
+        const [oneRepMax, setOneRepMax] = React.useState(
+          () => localStorage.getItem('sheiko_oneRepMax') || '',
+        );
+        const [workLoad, setWorkLoad] = React.useState(
+          () => localStorage.getItem('sheiko_workLoad') || '',
+        );
+        const [completed, setCompleted] = React.useState(() => {
+          try {
+            return JSON.parse(localStorage.getItem('sheiko_completed') || '[]');
+          } catch (e) {
+            return [];
+          }
+        });
         const [sets, setSets] = React.useState([]);
-        const [completed, setCompleted] = React.useState([]);
+
+        // Persistência: grava cada estado quando muda.
+        React.useEffect(() => {
+          localStorage.setItem('sheiko_oneRepMax', oneRepMax);
+        }, [oneRepMax]);
+        React.useEffect(() => {
+          localStorage.setItem('sheiko_workLoad', workLoad);
+        }, [workLoad]);
+        React.useEffect(() => {
+          localStorage.setItem('sheiko_completed', JSON.stringify(completed));
+        }, [completed]);
 
         const handleTransferWarmup = (weight) => {
           setWorkLoad(weight.toString());
@@ -641,12 +637,21 @@
           return [preWarmupSet, ...warmupSets];
         };
 
+        const isFirstRender = React.useRef(true);
         React.useEffect(() => {
           if (workLoad && parseFloat(workLoad) > 0) {
             const calculated = calculateWarmup(parseFloat(workLoad));
             setSets(calculated);
           } else {
             setSets([]);
+          }
+          // Reseta o progresso ao mudar a carga: os índices de `completed`
+          // não correspondem mais às novas séries geradas. Pula a primeira
+          // renderização para não apagar o progresso restaurado do localStorage.
+          if (isFirstRender.current) {
+            isFirstRender.current = false;
+          } else {
+            setCompleted([]);
           }
         }, [workLoad]);
 
@@ -694,7 +699,11 @@
               </div>
 
               {activeTab === '1rm' ? (
-                <OneRepMaxCalc onCalculateWarmup={handleTransferWarmup} />
+                <OneRepMaxCalc
+                  onCalculateWarmup={handleTransferWarmup}
+                  oneRepMax={oneRepMax}
+                  setOneRepMax={setOneRepMax}
+                />
               ) : (
                 <div className='fade-in'>
                   <div className='mb-10'>
@@ -705,16 +714,34 @@
                       <input
                         type='number'
                         value={workLoad}
-                        onChange={(e) => setWorkLoad(e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          // Ignora valores negativos
+                          if (v === '' || parseFloat(v) >= 0) setWorkLoad(v);
+                        }}
                         placeholder='0'
-                        className='w-full text-7xl font-black border-b-4 border-gray-200 py-4 focus:outline-none focus:border-black transition-colors bg-transparent placeholder-gray-200'
+                        className='tnum w-full text-7xl font-black border-b-4 border-gray-200 py-4 focus:outline-none focus:border-black transition-colors bg-transparent placeholder-gray-200'
                         step='any'
+                        min='0'
+                        inputMode='decimal'
                       />
                       <span className='absolute right-0 top-1/2 -translate-y-1/2 text-xl font-bold text-gray-400 group-focus-within:text-black transition-colors'>
                         KG
                       </span>
                     </div>
                   </div>
+
+                  {/* Aviso de carga mínima */}
+                  {workLoad &&
+                    parseFloat(workLoad) > 0 &&
+                    parseFloat(workLoad) < 40 && (
+                      <div className='flex items-center gap-3 p-4 mb-6 rounded-xl bg-amber-50 border border-amber-200 text-amber-700'>
+                        <AlertCircle size={20} className='flex-shrink-0' />
+                        <span className='text-sm font-bold'>
+                          Carga mínima de 40kg para gerar o aquecimento.
+                        </span>
+                      </div>
+                    )}
 
                   {/* Seletor de Modo */}
                   {sets.length > 0 && (
@@ -732,7 +759,7 @@
                     )}
 
                     {sets.length > 0 && (
-                      <div className='absolute left-[26px] top-10 bottom-10 w-0.5 -z-10'></div>
+                      <div className='absolute left-[26px] top-10 bottom-10 w-0.5 bg-gray-100 -z-10'></div>
                     )}
 
                     {sets.map((set, index) => {
@@ -761,7 +788,23 @@
                           )}
                           <div
                             onClick={() => toggleSet(index)}
-                            className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none ${
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' || e.key === ' ') {
+                                e.preventDefault();
+                                toggleSet(index);
+                              }
+                            }}
+                            role='button'
+                            tabIndex={0}
+                            aria-pressed={isDone}
+                            aria-label={`${
+                              set.isPreWarmup
+                                ? 'Pré-aquecimento'
+                                : 'Série ' + index
+                            }, ${set.weight}kg, ${set.reps} reps${
+                              isDone ? ', concluída' : ''
+                            }`}
+                            className={`relative flex items-center gap-6 p-4 rounded-xl cursor-pointer transition-all duration-300 group select-none focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 ${
                               isDone
                                 ? 'opacity-30 grayscale blur-[0.5px]'
                                 : 'opacity-100'
@@ -789,7 +832,7 @@
                             </div>
                             <div className='flex-grow flex flex-col justify-center'>
                               <div className='flex items-baseline gap-2'>
-                                <span className='text-4xl font-black tracking-tight leading-none'>
+                                <span className='tnum text-4xl font-black tracking-tight leading-none'>
                                   {set.weight}
                                 </span>
                                 <span className='text-xs font-bold uppercase tracking-wider opacity-70'>
@@ -814,7 +857,7 @@
                               </div>
                             </div>
                             <div className='text-right min-w-[60px]'>
-                              <div className='text-4xl font-black leading-none'>
+                              <div className='tnum text-4xl font-black leading-none'>
                                 {set.reps}
                               </div>
                               <div className='text-[9px] uppercase font-bold tracking-widest mt-1 opacity-70'>
@@ -834,7 +877,7 @@
                           </span>
                           <div className='h-px bg-blue-100 flex-grow'></div>
                         </div>
-                        <div className='flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden relative z-10 bg-white'>
+                        <div className='flex items-center gap-6 p-6 rounded-2xl border-2 border-blue-600 bg-blue-50 shadow-sm relative overflow-hidden z-10'>
                           <div className='w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white shrink-0 z-10 shadow-lg shadow-blue-200'>
                             <Dumbbell size={24} />
                           </div>
@@ -843,7 +886,7 @@
                               Séries de Trabalho
                             </div>
                             <div className='flex items-baseline gap-2'>
-                              <span className='text-5xl font-black text-black tracking-tighter'>
+                              <span className='tnum text-5xl font-black text-black tracking-tighter'>
                                 {workLoad}
                               </span>
                               <span className='text-xl text-gray-400 font-bold'>
@@ -873,7 +916,7 @@
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker
-            .register('./sw.js?v=4.0')
+            .register('./sw.js?v=4.2')
             .then((reg) => {
               console.log('SW registrado com sucesso:', reg.scope);
               reg.update();
