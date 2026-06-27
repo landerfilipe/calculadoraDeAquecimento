@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v4.7';
+const CACHE_NAME = 'sheiko-app-v4.8';
 
 // App shell local (essencial): se algum falhar, a instalação deve falhar.
 const CORE_ASSETS = [
