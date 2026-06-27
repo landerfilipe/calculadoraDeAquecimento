@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v4.6';
+const CACHE_NAME = 'sheiko-app-v4.7';
 
 // App shell local (essencial): se algum falhar, a instalação deve falhar.
 const CORE_ASSETS = [
@@ -7,7 +7,6 @@ const CORE_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './Outfit/Outfit-VariableFont_wght.ttf',
 ];
 
 // Recursos de CDN (externos): cacheados individualmente; falhas não
