@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v4.4'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
+const CACHE_NAME = 'sheiko-app-v4.5';
 
 // App shell local (essencial): se algum falhar, a instalação deve falhar.
 const CORE_ASSETS = [
@@ -7,7 +7,6 @@ const CORE_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './Outfit/Outfit-VariableFont_wght.ttf',
 ];
 
 // Recursos de CDN (externos): cacheados individualmente; falhas não
@@ -69,6 +68,14 @@ self.addEventListener('activate', (event) => {
 //    - Demais recursos (libs, ícones): CACHE FIRST — rápido e estável.
 self.addEventListener('fetch', (event) => {
   const request = event.request;
+
+  // Deixa o Google Fonts passar direto — o SW não deve interceptar
+  if (
+    request.url.includes('fonts.googleapis.com') ||
+    request.url.includes('fonts.gstatic.com')
+  ) {
+    return;
+  }
 
   // É uma navegação de página (carregar o index.html)?
   const isHTML =
