@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sheiko-app-v4.3'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
+const CACHE_NAME = 'sheiko-app-v4.4'; // ATENÇÃO: Mudei o nome para forçar a limpeza do cache antigo
 
 // App shell local (essencial): se algum falhar, a instalação deve falhar.
 const CORE_ASSETS = [
@@ -7,6 +7,7 @@ const CORE_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './Outfit/Outfit-VariableFont_wght.ttf',
 ];
 
 // Recursos de CDN (externos): cacheados individualmente; falhas não
@@ -14,7 +15,6 @@ const CORE_ASSETS = [
 // URLs das libs alinhadas com as versões fixadas no index.html.
 const CDN_ASSETS = [
   'https://cdn.tailwindcss.com',
-  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap',
   'https://unpkg.com/react@18.3.1/umd/react.production.min.js',
   'https://unpkg.com/react-dom@18.3.1/umd/react-dom.production.min.js',
   'https://unpkg.com/@babel/standalone/babel.min.js',
