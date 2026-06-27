@@ -38,15 +38,10 @@
       crossorigin="anonymous"
     ></script>
 
-    <style>
-      @font-face {
-        font-family: 'Outfit';
-        src: url('./Outfit/Outfit-VariableFont_wght.ttf') format('truetype');
-        font-weight: 100 900;
-        font-style: normal;
-        font-display: swap;
-      }
-    </style>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;700;900&display=swap"
+      rel="stylesheet"
+    />
 
     <script
       crossorigin="anonymous"
@@ -119,7 +114,7 @@
       /* Compensa renderização mais fina do Skia no Android */
       @media (hover: none) and (pointer: coarse) {
         body {
-          -webkit-text-stroke: 0.5px currentColor;
+          -webkit-text-stroke: 1px currentColor;
         }
       }
 
