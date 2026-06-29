@@ -489,11 +489,11 @@
         };
 
         const repRanges = [
-          { reps: '2-3', percent: 90 },
-          { reps: '4-6', percent: 85 },
-          { reps: '7-9', percent: 80 },
-          { reps: '10-12', percent: 75 },
-          { reps: '13-15', percent: 70 },
+          { reps: '2-3', percent: 85 },
+          { reps: '4-6', percent: 80 },
+          { reps: '7-9', percent: 75 },
+          { reps: '10-12', percent: 70 },
+          { reps: '13-15', percent: 65 },
         ];
 
         return (
@@ -606,16 +606,26 @@
         };
 
         const calculateWarmup = (targetWeight) => {
-          if (!targetWeight || targetWeight < 40) return [];
+          if (!targetWeight || targetWeight <= 0) return [];
 
           // Função auxiliar para arredondar para múltiplo de 10
           const roundToTen = (num) => Math.round(num / 10) * 10;
 
-          // Determinar número de séries baseado no peso (cada 40kg = +1 série)
-          // 40kg+ = 1, 80kg+ = 2, 120kg+ = 3... até 400kg = 10
-          const numSets = Math.min(10, Math.floor(targetWeight / 40));
+          // Série 0 (pré-aquecimento): sempre 10 reps com 10kg fixo.
+          // Permanece em TODAS as cargas, inclusive abaixo de 50kg.
+          const preWarmupSet = {
+            weight: 10,
+            reps: 10,
+            percent: 0,
+            isPreWarmup: true,
+          };
 
-          if (numSets === 0) return [];
+          // Determinar número de séries baseado no peso (cada 50kg = +1 série)
+          // 50kg+ = 1, 100kg+ = 2, 150kg+ = 3... até 500kg = 10
+          const numSets = Math.min(10, Math.floor(targetWeight / 50));
+
+          // Abaixo de 50kg: apenas o pré-aquecimento fixo de 10kg.
+          if (numSets === 0) return [preWarmupSet];
 
           // Porcentagens por número de séries
           const percentagesBySetCount = {
@@ -643,14 +653,6 @@
           };
 
           const percentages = percentagesBySetCount[numSets];
-
-          // Série 0 (pré-aquecimento): sempre 10 reps com 10kg fixo
-          const preWarmupSet = {
-            weight: 10,
-            reps: 10,
-            percent: 0,
-            isPreWarmup: true,
-          };
 
           // Gerar séries de aquecimento
           const warmupSets = percentages.map((percent, i) => {
@@ -762,17 +764,6 @@
                     </div>
                   </div>
 
-                  {/* Aviso de carga mínima */}
-                  {workLoad &&
-                    parseFloat(workLoad) > 0 &&
-                    parseFloat(workLoad) < 40 && (
-                      <div className='flex items-center gap-3 p-4 mb-6 rounded-xl bg-amber-50 border border-amber-200 text-amber-700'>
-                        <AlertCircle size={20} className='flex-shrink-0' />
-                        <span className='text-sm font-bold'>
-                          Carga mínima de 40kg para gerar o aquecimento.
-                        </span>
-                      </div>
-                    )}
 
                   {/* Seletor de Modo */}
                   {sets.length > 0 && (
